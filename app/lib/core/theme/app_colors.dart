@@ -8,11 +8,11 @@ abstract final class AppColors {
   static const Color surfaceCard = Color(0xFF182032);
   static const Color border = Color(0xFF222F46);
 
-  // Accents (Electric Emerald & Neon Cyan)
-  static const Color primary = Color(0xFF00E599);
-  static const Color primaryDark = Color(0xFF00B377);
-  static const Color secondary = Color(0xFF38BDF8);
-  static const Color accent = Color(0xFF818CF8);
+  // Accents (Electric Celeste & Sky Blue)
+  static const Color primary = Color(0xFF38BDF8); // Celeste brillante / Sky 400
+  static const Color primaryDark = Color(0xFF0284C7); // Celeste profundo / Sky 600
+  static const Color secondary = Color(0xFF7DD3FC); // Celeste suave / Sky 300
+  static const Color accent = Color(0xFF00E5FF); // Celeste neón eléctrico
 
   // Typography
   static const Color textPrimary = Color(0xFFF8FAFC);
