@@ -23,8 +23,10 @@ class ActiveWorkoutController extends StateNotifier<AsyncValue<void>> {
     final sessionId = _uuid.v4();
 
     final sets = <SetRecordEntity>[];
+    int order = 0;
     for (final ex in routine.exercises) {
       for (int i = 1; i <= ex.targetSets; i++) {
+        order++;
         sets.add(
           SetRecordEntity(
             id: _uuid.v4(),
@@ -39,7 +41,7 @@ class ActiveWorkoutController extends StateNotifier<AsyncValue<void>> {
             completedReps: ex.targetReps,
             completedWeight: ex.targetWeight,
             restTimeSeconds: ex.restSeconds,
-            createdAt: now,
+            createdAt: now.add(Duration(milliseconds: order * 10)),
             updatedAt: now,
           ),
         );

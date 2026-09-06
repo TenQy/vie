@@ -12,35 +12,42 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   WorkoutRepositoryImpl(this._db);
 
+  JoinedSelectStatement _routinesWithExercisesQuery() {
+    return _db.select(_db.routines).join([
+      leftOuterJoin(
+        _db.routineExercises,
+        _db.routineExercises.routineId.equalsExp(_db.routines.id),
+      ),
+    ])..orderBy([
+      OrderingTerm.asc(_db.routines.orderIndex),
+      OrderingTerm.asc(_db.routineExercises.orderIndex),
+    ]);
+  }
+
+  List<RoutineEntity> _mapJoinedRoutineRows(List<TypedResult> rows) {
+    final map = <String, (Routine, List<RoutineExercise>)>{};
+    for (final row in rows) {
+      final r = row.readTable(_db.routines);
+      final entry = map.putIfAbsent(r.id, () => (r, <RoutineExercise>[]));
+      final ex = row.readTableOrNull(_db.routineExercises);
+      if (ex != null) {
+        entry.$2.add(ex);
+      }
+    }
+    return map.values
+        .map((e) => WorkoutMappers.toRoutineEntity(e.$1, e.$2))
+        .toList();
+  }
+
   @override
   Stream<List<RoutineEntity>> watchRoutines() {
-    return _db.select(_db.routines).watch().asyncMap((routines) async {
-      final result = <RoutineEntity>[];
-      for (final r in routines) {
-        final exercises =
-            await (_db.select(_db.routineExercises)
-                  ..where((tbl) => tbl.routineId.equals(r.id))
-                  ..orderBy([(tbl) => OrderingTerm.asc(tbl.orderIndex)]))
-                .get();
-        result.add(WorkoutMappers.toRoutineEntity(r, exercises));
-      }
-      return result;
-    });
+    return _routinesWithExercisesQuery().watch().map(_mapJoinedRoutineRows);
   }
 
   @override
   Future<List<RoutineEntity>> getRoutines() async {
-    final routines = await _db.select(_db.routines).get();
-    final result = <RoutineEntity>[];
-    for (final r in routines) {
-      final exercises =
-          await (_db.select(_db.routineExercises)
-                ..where((tbl) => tbl.routineId.equals(r.id))
-                ..orderBy([(tbl) => OrderingTerm.asc(tbl.orderIndex)]))
-              .get();
-      result.add(WorkoutMappers.toRoutineEntity(r, exercises));
-    }
-    return result;
+    final rows = await _routinesWithExercisesQuery().get();
+    return _mapJoinedRoutineRows(rows);
   }
 
   @override
@@ -145,82 +152,90 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Stream<WorkoutSessionEntity?> watchActiveSession() {
-    return (_db.select(_db.workoutSessions)
-          ..where((tbl) => tbl.status.equals('active'))
-          ..limit(1))
-        .watchSingleOrNull()
-        .asyncMap((session) async {
-          if (session == null) return null;
-          final sets =
-              await (_db.select(_db.setRecords)
-                    ..where((tbl) => tbl.sessionId.equals(session.id))
-                    ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
-                  .get();
-          return WorkoutMappers.toSessionEntity(session, sets);
-        });
+    final query = _db.select(_db.workoutSessions).join([
+      leftOuterJoin(
+        _db.setRecords,
+        _db.setRecords.sessionId.equalsExp(_db.workoutSessions.id),
+      ),
+    ])
+      ..where(_db.workoutSessions.status.equals('active'))
+      ..orderBy([
+        OrderingTerm.asc(_db.setRecords.rowId),
+      ]);
+
+    return query.watch().map((rows) {
+      if (rows.isEmpty) return null;
+      final sessionRow = rows.first.readTable(_db.workoutSessions);
+      final sets = <SetRecord>[];
+      for (final row in rows) {
+        final setRow = row.readTableOrNull(_db.setRecords);
+        if (setRow != null) {
+          sets.add(setRow);
+        }
+      }
+      return WorkoutMappers.toSessionEntity(sessionRow, sets);
+    });
   }
 
   @override
   Future<WorkoutSessionEntity?> getActiveSession() async {
-    final session =
-        await (_db.select(_db.workoutSessions)
-              ..where((tbl) => tbl.status.equals('active'))
-              ..limit(1))
-            .getSingleOrNull();
+    final session = await (_db.select(_db.workoutSessions)
+          ..where((tbl) => tbl.status.equals('active'))
+          ..limit(1))
+        .getSingleOrNull();
     if (session == null) return null;
 
-    final sets =
-        await (_db.select(_db.setRecords)
-              ..where((tbl) => tbl.sessionId.equals(session.id))
-              ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
-            .get();
+    final sets = await (_db.select(_db.setRecords)
+          ..where((tbl) => tbl.sessionId.equals(session.id))
+          ..orderBy([
+            (tbl) => OrderingTerm.asc(tbl.rowId),
+          ]))
+        .get();
     return WorkoutMappers.toSessionEntity(session, sets);
   }
 
   @override
   Future<void> startWorkoutSession(WorkoutSessionEntity session) async {
-    await _db
-        .into(_db.workoutSessions)
-        .insert(
-          WorkoutSessionsCompanion.insert(
-            id: session.id,
-            routineId: Value(session.routineId),
-            routineName: session.routineName,
-            status: const Value('active'),
-            startTime: session.startTime,
-            totalDurationSeconds: Value(session.totalDurationSeconds),
-            totalVolumeKg: Value(session.totalVolumeKg),
-            createdAt: Value(session.createdAt),
-            updatedAt: Value(session.updatedAt),
-            syncStatus: const Value('pending'),
-          ),
-        );
-
-    for (final s in session.sets) {
-      await _db
-          .into(_db.setRecords)
-          .insert(
-            SetRecordsCompanion.insert(
-              id: s.id,
-              sessionId: session.id,
-              exerciseId: Value(s.exerciseId),
-              exerciseName: s.exerciseName,
-              muscleGroup: s.muscleGroup,
-              setNumber: s.setNumber,
-              metricType: Value(s.metricType),
-              targetReps: Value(s.targetReps),
-              targetWeight: Value(s.targetWeight),
-              completedReps: Value(s.completedReps),
-              completedWeight: Value(s.completedWeight),
-              restTimeSeconds: Value(s.restTimeSeconds),
-              isCompleted: Value(s.isCompleted),
-              completedAt: Value(s.completedAt),
-              createdAt: Value(s.createdAt),
-              updatedAt: Value(s.updatedAt),
+    await _db.transaction(() async {
+      await _db.into(_db.workoutSessions).insert(
+            WorkoutSessionsCompanion.insert(
+              id: session.id,
+              routineId: Value(session.routineId),
+              routineName: session.routineName,
+              status: const Value('active'),
+              startTime: session.startTime,
+              totalDurationSeconds: Value(session.totalDurationSeconds),
+              totalVolumeKg: Value(session.totalVolumeKg),
+              createdAt: Value(session.createdAt),
+              updatedAt: Value(session.updatedAt),
               syncStatus: const Value('pending'),
             ),
           );
-    }
+
+      for (final s in session.sets) {
+        await _db.into(_db.setRecords).insert(
+              SetRecordsCompanion.insert(
+                id: s.id,
+                sessionId: session.id,
+                exerciseId: Value(s.exerciseId),
+                exerciseName: s.exerciseName,
+                muscleGroup: s.muscleGroup,
+                setNumber: s.setNumber,
+                metricType: Value(s.metricType),
+                targetReps: Value(s.targetReps),
+                targetWeight: Value(s.targetWeight),
+                completedReps: Value(s.completedReps),
+                completedWeight: Value(s.completedWeight),
+                restTimeSeconds: Value(s.restTimeSeconds),
+                isCompleted: Value(s.isCompleted),
+                completedAt: Value(s.completedAt),
+                createdAt: Value(s.createdAt),
+                updatedAt: Value(s.updatedAt),
+                syncStatus: const Value('pending'),
+              ),
+            );
+      }
+    });
   }
 
   @override
@@ -318,7 +333,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       final sets =
           await (_db.select(_db.setRecords)
                 ..where((tbl) => tbl.sessionId.equals(s.id))
-                ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
+                ..orderBy([(tbl) => OrderingTerm.asc(tbl.rowId)]))
               .get();
       result.add(WorkoutMappers.toSessionEntity(s, sets));
     }
