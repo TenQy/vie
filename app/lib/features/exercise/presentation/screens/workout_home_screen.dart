@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/utils/date_helpers.dart';
 import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../controllers/active_workout_controller.dart';
 import '../controllers/routine_list_controller.dart';
@@ -55,28 +56,53 @@ class WorkoutHomeScreen extends ConsumerWidget {
         .firstOrNull ??
         routines.firstOrNull;
 
+    final activeBanner = activeSessionAsync.maybeWhen(
+      data: (session) {
+        if (session == null) return const SizedBox.shrink();
+        return ActiveSessionBanner(
+          session: session,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ActiveWorkoutScreen(session: session),
+            ),
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+
+    if (scheduledRoutine == null) {
+      return Column(
+        children: [
+          activeBanner,
+          Expanded(
+            child: EmptyState(
+              icon: LucideIcons.dumbbell,
+              title: 'No hay rutina programada para hoy',
+              description:
+                  'Crea tu primera plantilla para comenzar a registrar tus entrenamientos.',
+              action: ElevatedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const WorkoutSettingsScreen(),
+                  ),
+                ),
+                icon: const Icon(LucideIcons.plus),
+                label: const Text('Crear Primera Rutina'),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 12),
       children: [
-        activeSessionAsync.maybeWhen(
-          data: (session) {
-            if (session == null) return const SizedBox.shrink();
-            return ActiveSessionBanner(
-              session: session,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ActiveWorkoutScreen(session: session),
-                ),
-              ),
-            );
-          },
-          orElse: () => const SizedBox.shrink(),
-        ),
-        if (scheduledRoutine != null)
-          _buildScheduledRoutineSection(context, ref, scheduledRoutine)
-        else
-          _buildEmptyRoutineState(context, ref),
+        activeBanner,
+        _buildScheduledRoutineSection(context, ref, scheduledRoutine),
       ],
     );
   }
@@ -116,41 +142,6 @@ class WorkoutHomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           ...routine.exercises.map((ex) => ExerciseCard(exercise: ex)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyRoutineState(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        children: [
-          const Icon(LucideIcons.dumbbell, size: 64, color: AppColors.textMuted),
-          const SizedBox(height: 16),
-          Text('No hay rutina programada para hoy', style: AppTypography.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Crea tu primera plantilla o inicia un entrenamiento libre.',
-            style: AppTypography.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const WorkoutSettingsScreen()),
-            ),
-            icon: const Icon(LucideIcons.plus),
-            label: const Text('Crear Primera Rutina'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => ref
-                .read(activeWorkoutControllerProvider.notifier)
-                .startFreeWorkout(),
-            child: const Text('Entrenamiento Libre'),
-          ),
         ],
       ),
     );
