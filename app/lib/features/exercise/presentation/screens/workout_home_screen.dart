@@ -12,6 +12,7 @@ import '../controllers/routine_list_controller.dart';
 import '../providers/workout_repository_provider.dart';
 import '../widgets/active_session_banner.dart';
 import '../widgets/exercise_card.dart';
+import '../widgets/routine_overview_card.dart';
 import 'active_workout_screen.dart';
 import 'routine_editor_screen.dart';
 import 'workout_settings_screen.dart';
@@ -120,23 +121,9 @@ class WorkoutHomeScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(routine.name, style: AppTypography.displayMedium),
-              ),
-            ],
-          ),
-          if (routine.description != null) ...[
-            const SizedBox(height: 4),
-            Text(routine.description!, style: AppTypography.bodyMedium),
-          ],
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () => _startWorkout(context, ref, routine),
-            icon: const Icon(LucideIcons.play),
-            label: const Text('Iniciar Entrenamiento'),
+          RoutineOverviewCard(
+            routine: routine,
+            onStartWorkout: () => _startWorkout(context, ref, routine),
           ),
           const SizedBox(height: 24),
           Text(
