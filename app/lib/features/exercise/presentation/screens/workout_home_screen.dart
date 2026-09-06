@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/utils/date_helpers.dart';
+import '../../../../core/widgets/app_bottom_nav_bar.dart';
 import '../../../../core/widgets/app_header.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../domain/entities/routine_entity.dart';
@@ -41,6 +42,7 @@ class WorkoutHomeScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error al cargar rutinas: $err')),
       ),
+      bottomNavigationBar: const AppBottomNavBar(),
     );
   }
 
