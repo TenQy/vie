@@ -60,6 +60,16 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     }
   }
 
+  void subtract15Seconds() {
+    if (state.remainingSeconds <= 15) {
+      stop();
+    } else {
+      state = state.copyWith(
+        remainingSeconds: state.remainingSeconds - 15,
+      );
+    }
+  }
+
   void pause() {
     _timer?.cancel();
     state = state.copyWith(isRunning: false);

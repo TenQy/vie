@@ -96,6 +96,23 @@ class ActiveWorkoutController extends StateNotifier<AsyncValue<void>> {
     state = await AsyncValue.guard(() => _repository.updateSetRecord(updated));
   }
 
+  Future<void> completeSet(
+    SetRecordEntity setRecord, {
+    required int reps,
+    required double weight,
+  }) async {
+    final now = DateTime.now();
+    final updated = setRecord.copyWith(
+      isCompleted: true,
+      completedReps: reps,
+      completedWeight: weight,
+      completedAt: now,
+      updatedAt: now,
+    );
+
+    state = await AsyncValue.guard(() => _repository.updateSetRecord(updated));
+  }
+
   Future<void> finishWorkout(String sessionId) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(
