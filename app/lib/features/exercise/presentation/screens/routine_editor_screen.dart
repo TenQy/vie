@@ -78,10 +78,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Ejercicios (${_exercises.length})',
-          style: AppTypography.titleMedium,
-        ),
+        Text('Ejercicios (${_exercises.length})', style: AppTypography.titleMedium),
         TextButton.icon(
           onPressed: _openAddExerciseSheet,
           icon: const Icon(LucideIcons.plus, size: 18),
@@ -104,16 +101,11 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
           children: [
             const Icon(LucideIcons.dumbbell, size: 36, color: AppColors.textMuted),
             const SizedBox(height: 12),
-            Text(
-              'Aún no has agregado ejercicios',
-              style: AppTypography.titleMedium.copyWith(fontSize: 15),
-            ),
+            Text('Aún no has agregado ejercicios',
+                style: AppTypography.titleMedium.copyWith(fontSize: 15)),
             const SizedBox(height: 4),
-            Text(
-              'Presiona "+ Agregar Ejercicio" para armar tu rutina.',
-              style: AppTypography.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
+            Text('Presiona "+ Agregar Ejercicio" para armar tu rutina.',
+                style: AppTypography.bodyMedium, textAlign: TextAlign.center),
           ],
         ),
       );
@@ -135,7 +127,6 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
 
   Widget _buildBottomBar(bool isEditing) {
     final canSave = _nameController.text.trim().isNotEmpty;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -186,11 +177,17 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
 
     await ref
         .read(routineListControllerProvider.notifier)
-        .saveRoutineWithExercises(
-          routine: routine,
-          exercises: _exercises,
-        );
+        .saveRoutineWithExercises(routine: routine, exercises: _exercises);
 
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+    final state = ref.read(routineListControllerProvider);
+    if (state.hasError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar la rutina: ${state.error}')),
+      );
+      return;
+    }
+
+    Navigator.pop(context);
   }
 }

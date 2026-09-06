@@ -49,19 +49,12 @@ class RoutineListController extends StateNotifier<AsyncValue<void>> {
     required List<ExerciseEntity> exercises,
   }) async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      await _repository.saveRoutine(routine);
-      await _repository.deleteRoutineExercises(routine.id);
-      for (int i = 0; i < exercises.length; i++) {
-        final ex = exercises[i];
-        await _repository.saveRoutineExercise(
-          ex.copyWith(
-            routineId: routine.id,
-            orderIndex: i,
-          ),
-        );
-      }
-    });
+    state = await AsyncValue.guard(
+      () => _repository.saveRoutineWithExercises(
+        routine: routine,
+        exercises: exercises,
+      ),
+    );
   }
 }
 

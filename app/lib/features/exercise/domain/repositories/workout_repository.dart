@@ -13,6 +13,10 @@ abstract interface class WorkoutRepository {
   Future<void> saveRoutineExercise(ExerciseEntity exercise);
   Future<void> deleteRoutineExercise(String exerciseId);
   Future<void> deleteRoutineExercises(String routineId);
+  Future<void> saveRoutineWithExercises({
+    required RoutineEntity routine,
+    required List<ExerciseEntity> exercises,
+  });
 
   // Active workout session
   Stream<WorkoutSessionEntity?> watchActiveSession();

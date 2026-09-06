@@ -17,10 +17,11 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     return _db.select(_db.routines).watch().asyncMap((routines) async {
       final result = <RoutineEntity>[];
       for (final r in routines) {
-        final exercises = await (_db.select(_db.routineExercises)
-              ..where((tbl) => tbl.routineId.equals(r.id))
-              ..orderBy([(tbl) => OrderingTerm.asc(tbl.orderIndex)]))
-            .get();
+        final exercises =
+            await (_db.select(_db.routineExercises)
+                  ..where((tbl) => tbl.routineId.equals(r.id))
+                  ..orderBy([(tbl) => OrderingTerm.asc(tbl.orderIndex)]))
+                .get();
         result.add(WorkoutMappers.toRoutineEntity(r, exercises));
       }
       return result;
@@ -32,10 +33,11 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     final routines = await _db.select(_db.routines).get();
     final result = <RoutineEntity>[];
     for (final r in routines) {
-      final exercises = await (_db.select(_db.routineExercises)
-            ..where((tbl) => tbl.routineId.equals(r.id))
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.orderIndex)]))
-          .get();
+      final exercises =
+          await (_db.select(_db.routineExercises)
+                ..where((tbl) => tbl.routineId.equals(r.id))
+                ..orderBy([(tbl) => OrderingTerm.asc(tbl.orderIndex)]))
+              .get();
       result.add(WorkoutMappers.toRoutineEntity(r, exercises));
     }
     return result;
@@ -43,21 +45,24 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<RoutineEntity?> getRoutineById(String id) async {
-    final routine = await (_db.select(_db.routines)
-          ..where((tbl) => tbl.id.equals(id)))
-        .getSingleOrNull();
+    final routine = await (_db.select(
+      _db.routines,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
     if (routine == null) return null;
 
-    final exercises = await (_db.select(_db.routineExercises)
-          ..where((tbl) => tbl.routineId.equals(id))
-          ..orderBy([(tbl) => OrderingTerm.asc(tbl.orderIndex)]))
-        .get();
+    final exercises =
+        await (_db.select(_db.routineExercises)
+              ..where((tbl) => tbl.routineId.equals(id))
+              ..orderBy([(tbl) => OrderingTerm.asc(tbl.orderIndex)]))
+            .get();
     return WorkoutMappers.toRoutineEntity(routine, exercises);
   }
 
   @override
   Future<void> saveRoutine(RoutineEntity routine) async {
-    await _db.into(_db.routines).insertOnConflictUpdate(
+    await _db
+        .into(_db.routines)
+        .insertOnConflictUpdate(
           RoutinesCompanion.insert(
             id: routine.id,
             name: routine.name,
@@ -74,15 +79,17 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> deleteRoutine(String id) async {
-    await (_db.delete(_db.routineExercises)
-          ..where((tbl) => tbl.routineId.equals(id)))
-        .go();
+    await (_db.delete(
+      _db.routineExercises,
+    )..where((tbl) => tbl.routineId.equals(id))).go();
     await (_db.delete(_db.routines)..where((tbl) => tbl.id.equals(id))).go();
   }
 
   @override
   Future<void> saveRoutineExercise(ExerciseEntity exercise) async {
-    await _db.into(_db.routineExercises).insertOnConflictUpdate(
+    await _db
+        .into(_db.routineExercises)
+        .insertOnConflictUpdate(
           RoutineExercisesCompanion.insert(
             id: exercise.id,
             routineId: exercise.routineId,
@@ -104,9 +111,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> deleteRoutineExercise(String exerciseId) async {
-    await (_db.delete(_db.routineExercises)
-          ..where((tbl) => tbl.id.equals(exerciseId)))
-        .go();
+    await (_db.delete(
+      _db.routineExercises,
+    )..where((tbl) => tbl.id.equals(exerciseId))).go();
   }
 
   @override
@@ -117,39 +124,64 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   }
 
   @override
+  Future<void> saveRoutineWithExercises({
+    required RoutineEntity routine,
+    required List<ExerciseEntity> exercises,
+  }) async {
+    await _db.transaction(() async {
+      await saveRoutine(routine);
+      await deleteRoutineExercises(routine.id);
+      for (int i = 0; i < exercises.length; i++) {
+        final ex = exercises[i];
+        await saveRoutineExercise(
+          ex.copyWith(
+            routineId: routine.id,
+            orderIndex: i,
+          ),
+        );
+      }
+    });
+  }
+
+  @override
   Stream<WorkoutSessionEntity?> watchActiveSession() {
     return (_db.select(_db.workoutSessions)
           ..where((tbl) => tbl.status.equals('active'))
           ..limit(1))
         .watchSingleOrNull()
         .asyncMap((session) async {
-      if (session == null) return null;
-      final sets = await (_db.select(_db.setRecords)
-            ..where((tbl) => tbl.sessionId.equals(session.id))
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
-          .get();
-      return WorkoutMappers.toSessionEntity(session, sets);
-    });
+          if (session == null) return null;
+          final sets =
+              await (_db.select(_db.setRecords)
+                    ..where((tbl) => tbl.sessionId.equals(session.id))
+                    ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
+                  .get();
+          return WorkoutMappers.toSessionEntity(session, sets);
+        });
   }
 
   @override
   Future<WorkoutSessionEntity?> getActiveSession() async {
-    final session = await (_db.select(_db.workoutSessions)
-          ..where((tbl) => tbl.status.equals('active'))
-          ..limit(1))
-        .getSingleOrNull();
+    final session =
+        await (_db.select(_db.workoutSessions)
+              ..where((tbl) => tbl.status.equals('active'))
+              ..limit(1))
+            .getSingleOrNull();
     if (session == null) return null;
 
-    final sets = await (_db.select(_db.setRecords)
-          ..where((tbl) => tbl.sessionId.equals(session.id))
-          ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
-        .get();
+    final sets =
+        await (_db.select(_db.setRecords)
+              ..where((tbl) => tbl.sessionId.equals(session.id))
+              ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
+            .get();
     return WorkoutMappers.toSessionEntity(session, sets);
   }
 
   @override
   Future<void> startWorkoutSession(WorkoutSessionEntity session) async {
-    await _db.into(_db.workoutSessions).insert(
+    await _db
+        .into(_db.workoutSessions)
+        .insert(
           WorkoutSessionsCompanion.insert(
             id: session.id,
             routineId: Value(session.routineId),
@@ -165,7 +197,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         );
 
     for (final s in session.sets) {
-      await _db.into(_db.setRecords).insert(
+      await _db
+          .into(_db.setRecords)
+          .insert(
             SetRecordsCompanion.insert(
               id: s.id,
               sessionId: session.id,
@@ -191,9 +225,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> updateWorkoutSession(WorkoutSessionEntity session) async {
-    await (_db.update(_db.workoutSessions)
-          ..where((tbl) => tbl.id.equals(session.id)))
-        .write(
+    await (_db.update(
+      _db.workoutSessions,
+    )..where((tbl) => tbl.id.equals(session.id))).write(
       WorkoutSessionsCompanion(
         totalDurationSeconds: Value(session.totalDurationSeconds),
         totalVolumeKg: Value(session.totalVolumeKg),
@@ -205,9 +239,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> updateSetRecord(SetRecordEntity setRecord) async {
-    await (_db.update(_db.setRecords)
-          ..where((tbl) => tbl.id.equals(setRecord.id)))
-        .write(
+    await (_db.update(
+      _db.setRecords,
+    )..where((tbl) => tbl.id.equals(setRecord.id))).write(
       SetRecordsCompanion(
         completedReps: Value(setRecord.completedReps),
         completedWeight: Value(setRecord.completedWeight),
@@ -222,9 +256,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> completeWorkoutSession(String sessionId) async {
-    final sets = await (_db.select(_db.setRecords)
-          ..where((tbl) => tbl.sessionId.equals(sessionId)))
-        .get();
+    final sets = await (_db.select(
+      _db.setRecords,
+    )..where((tbl) => tbl.sessionId.equals(sessionId))).get();
 
     double totalVolume = 0;
     for (final s in sets) {
@@ -233,16 +267,16 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       }
     }
 
-    final session = await (_db.select(_db.workoutSessions)
-          ..where((tbl) => tbl.id.equals(sessionId)))
-        .getSingle();
+    final session = await (_db.select(
+      _db.workoutSessions,
+    )..where((tbl) => tbl.id.equals(sessionId))).getSingle();
 
     final now = DateTime.now();
     final duration = now.difference(session.startTime).inSeconds;
 
-    await (_db.update(_db.workoutSessions)
-          ..where((tbl) => tbl.id.equals(sessionId)))
-        .write(
+    await (_db.update(
+      _db.workoutSessions,
+    )..where((tbl) => tbl.id.equals(sessionId))).write(
       WorkoutSessionsCompanion(
         status: const Value('completed'),
         endTime: Value(now),
@@ -256,9 +290,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> cancelWorkoutSession(String sessionId) async {
-    await (_db.update(_db.workoutSessions)
-          ..where((tbl) => tbl.id.equals(sessionId)))
-        .write(
+    await (_db.update(
+      _db.workoutSessions,
+    )..where((tbl) => tbl.id.equals(sessionId))).write(
       WorkoutSessionsCompanion(
         status: const Value('cancelled'),
         endTime: Value(DateTime.now()),
@@ -272,18 +306,20 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   Future<List<WorkoutSessionEntity>> getCompletedSessions({
     int limit = 20,
   }) async {
-    final sessions = await (_db.select(_db.workoutSessions)
-          ..where((tbl) => tbl.status.equals('completed'))
-          ..orderBy([(tbl) => OrderingTerm.desc(tbl.startTime)])
-          ..limit(limit))
-        .get();
+    final sessions =
+        await (_db.select(_db.workoutSessions)
+              ..where((tbl) => tbl.status.equals('completed'))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.startTime)])
+              ..limit(limit))
+            .get();
 
     final result = <WorkoutSessionEntity>[];
     for (final s in sessions) {
-      final sets = await (_db.select(_db.setRecords)
-            ..where((tbl) => tbl.sessionId.equals(s.id))
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
-          .get();
+      final sets =
+          await (_db.select(_db.setRecords)
+                ..where((tbl) => tbl.sessionId.equals(s.id))
+                ..orderBy([(tbl) => OrderingTerm.asc(tbl.setNumber)]))
+              .get();
       result.add(WorkoutMappers.toSessionEntity(s, sets));
     }
     return result;
