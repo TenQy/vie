@@ -281,4 +281,12 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     }
     return result;
   }
+
+  @override
+  Future<void> clearAllData() async {
+    await _db.delete(_db.setRecords).go();
+    await _db.delete(_db.workoutSessions).go();
+    await _db.delete(_db.routineExercises).go();
+    await _db.delete(_db.routines).go();
+  }
 }

@@ -24,4 +24,7 @@ abstract interface class WorkoutRepository {
 
   // Historical sessions
   Future<List<WorkoutSessionEntity>> getCompletedSessions({int limit = 20});
+
+  // Database maintenance
+  Future<void> clearAllData();
 }

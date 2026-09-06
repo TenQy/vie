@@ -12,33 +12,18 @@ import '../widgets/exercise_card.dart';
 import 'active_workout_screen.dart';
 import 'workout_settings_screen.dart';
 
-class WorkoutHomeScreen extends ConsumerStatefulWidget {
+class WorkoutHomeScreen extends ConsumerWidget {
   const WorkoutHomeScreen({super.key});
 
   @override
-  ConsumerState<WorkoutHomeScreen> createState() => _WorkoutHomeScreenState();
-}
-
-class _WorkoutHomeScreenState extends ConsumerState<WorkoutHomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(routineListControllerProvider.notifier)
-          .seedDefaultRoutinesIfEmpty();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final activeSessionAsync = ref.watch(activeSessionStreamProvider);
     final routinesAsync = ref.watch(routinesStreamProvider);
 
     return Scaffold(
       appBar: _buildAppBar(context),
       body: routinesAsync.when(
-        data: (routines) => _buildContent(context, routines, activeSessionAsync),
+        data: (routines) => _buildContent(context, ref, routines, activeSessionAsync),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error al cargar rutinas: $err')),
       ),
@@ -72,6 +57,7 @@ class _WorkoutHomeScreenState extends ConsumerState<WorkoutHomeScreen> {
 
   Widget _buildContent(
     BuildContext context,
+    WidgetRef ref,
     List<RoutineEntity> routines,
     AsyncValue activeSessionAsync,
   ) {
@@ -100,15 +86,16 @@ class _WorkoutHomeScreenState extends ConsumerState<WorkoutHomeScreen> {
           orElse: () => const SizedBox.shrink(),
         ),
         if (scheduledRoutine != null)
-          _buildScheduledRoutineSection(context, scheduledRoutine)
+          _buildScheduledRoutineSection(context, ref, scheduledRoutine)
         else
-          _buildEmptyRoutineState(context),
+          _buildEmptyRoutineState(context, ref),
       ],
     );
   }
 
   Widget _buildScheduledRoutineSection(
     BuildContext context,
+    WidgetRef ref,
     RoutineEntity routine,
   ) {
     return Padding(
@@ -130,7 +117,7 @@ class _WorkoutHomeScreenState extends ConsumerState<WorkoutHomeScreen> {
           ],
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: () => _startWorkout(context, routine),
+            onPressed: () => _startWorkout(context, ref, routine),
             icon: const Icon(LucideIcons.play),
             label: const Text('Iniciar Entrenamiento'),
           ),
@@ -146,7 +133,7 @@ class _WorkoutHomeScreenState extends ConsumerState<WorkoutHomeScreen> {
     );
   }
 
-  Widget _buildEmptyRoutineState(BuildContext context) {
+  Widget _buildEmptyRoutineState(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -156,12 +143,21 @@ class _WorkoutHomeScreenState extends ConsumerState<WorkoutHomeScreen> {
           Text('No hay rutina programada para hoy', style: AppTypography.titleMedium),
           const SizedBox(height: 8),
           Text(
-            'Inicia un entrenamiento libre o crea una nueva plantilla en ajustes.',
+            'Crea tu primera plantilla o inicia un entrenamiento libre.',
             style: AppTypography.bodyMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
+          ElevatedButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const WorkoutSettingsScreen()),
+            ),
+            icon: const Icon(LucideIcons.plus),
+            label: const Text('Crear Primera Rutina'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
             onPressed: () => ref
                 .read(activeWorkoutControllerProvider.notifier)
                 .startFreeWorkout(),
@@ -172,7 +168,11 @@ class _WorkoutHomeScreenState extends ConsumerState<WorkoutHomeScreen> {
     );
   }
 
-  void _startWorkout(BuildContext context, RoutineEntity routine) async {
+  void _startWorkout(
+    BuildContext context,
+    WidgetRef ref,
+    RoutineEntity routine,
+  ) async {
     await ref
         .read(activeWorkoutControllerProvider.notifier)
         .startWorkoutFromRoutine(routine);
