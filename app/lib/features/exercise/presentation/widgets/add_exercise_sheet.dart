@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/widgets/number_counter.dart';
 import '../../domain/entities/exercise_entity.dart';
 
 class AddExerciseSheet extends StatefulWidget {
+  final ExerciseEntity? initialExercise;
   final ValueChanged<ExerciseEntity> onExerciseAdded;
 
-  const AddExerciseSheet({super.key, required this.onExerciseAdded});
+  const AddExerciseSheet({
+    super.key,
+    this.initialExercise,
+    required this.onExerciseAdded,
+  });
 
   @override
   State<AddExerciseSheet> createState() => _AddExerciseSheetState();
@@ -22,14 +28,23 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
   int _restSeconds = 90;
 
   static const _muscleGroups = [
-    'Pectoral',
-    'Espalda',
-    'Piernas',
-    'Hombros',
-    'Brazos',
-    'Core',
-    'Cuerpo Completo',
+    'Pectoral', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cuerpo Completo',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialExercise != null) {
+      final ex = widget.initialExercise!;
+      _nameController.text = ex.name;
+      _weightController.text =
+          ex.targetWeight % 1 == 0 ? ex.targetWeight.toInt().toString() : ex.targetWeight.toString();
+      _selectedMuscle = _muscleGroups.contains(ex.muscleGroup) ? ex.muscleGroup : _muscleGroups.first;
+      _targetSets = ex.targetSets;
+      _targetReps = ex.targetReps;
+      _restSeconds = ex.restSeconds;
+    }
+  }
 
   @override
   void dispose() {
@@ -40,19 +55,18 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.initialExercise != null;
+
     return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      padding: EdgeInsets.fromLTRB(
+        20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(),
+            _buildHeader(isEditing),
             const SizedBox(height: 16),
             _buildNameField(),
             const SizedBox(height: 12),
@@ -62,22 +76,19 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
             const SizedBox(height: 16),
             _buildWeightAndRestRow(),
             const SizedBox(height: 24),
-            _buildSubmitButton(),
+            _buildSubmitButton(isEditing),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isEditing) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Agregar Ejercicio', style: AppTypography.titleLarge),
-        IconButton(
-          icon: const Icon(LucideIcons.x, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        Text(isEditing ? 'Editar Ejercicio' : 'Agregar Ejercicio', style: AppTypography.titleLarge),
+        IconButton(icon: const Icon(LucideIcons.x, size: 20), onPressed: () => Navigator.pop(context)),
       ],
     );
   }
@@ -85,7 +96,7 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
   Widget _buildNameField() {
     return TextField(
       controller: _nameController,
-      autofocus: true,
+      autofocus: widget.initialExercise == null,
       decoration: const InputDecoration(
         labelText: 'Nombre del ejercicio',
         hintText: 'Ej. Press de Banca Plano',
@@ -97,9 +108,7 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
     return DropdownButtonFormField<String>(
       initialValue: _selectedMuscle,
       decoration: const InputDecoration(labelText: 'Grupo muscular'),
-      items: _muscleGroups
-          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-          .toList(),
+      items: _muscleGroups.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
       onChanged: (val) {
         if (val != null) setState(() => _selectedMuscle = val);
       },
@@ -110,7 +119,7 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
     return Row(
       children: [
         Expanded(
-          child: _buildNumberCounter(
+          child: NumberCounter(
             label: 'Series',
             value: _targetSets,
             onDecrement: () => setState(() => _targetSets = (_targetSets > 1) ? _targetSets - 1 : 1),
@@ -119,7 +128,7 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _buildNumberCounter(
+          child: NumberCounter(
             label: 'Reps',
             value: _targetReps,
             onDecrement: () => setState(() => _targetReps = (_targetReps > 1) ? _targetReps - 1 : 1),
@@ -137,10 +146,7 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
           child: TextField(
             controller: _weightController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Peso (kg)',
-              suffixText: 'kg',
-            ),
+            decoration: const InputDecoration(labelText: 'Peso (kg)', suffixText: 'kg'),
           ),
         ),
         const SizedBox(width: 12),
@@ -148,13 +154,9 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
           child: DropdownButtonFormField<int>(
             initialValue: _restSeconds,
             decoration: const InputDecoration(labelText: 'Descanso'),
-            items: const [
-              DropdownMenuItem(value: 45, child: Text('45s')),
-              DropdownMenuItem(value: 60, child: Text('60s')),
-              DropdownMenuItem(value: 90, child: Text('90s')),
-              DropdownMenuItem(value: 120, child: Text('120s')),
-              DropdownMenuItem(value: 180, child: Text('180s')),
-            ],
+            items: const [45, 60, 90, 120, 180]
+                .map((s) => DropdownMenuItem(value: s, child: Text('${s}s')))
+                .toList(),
             onChanged: (val) {
               if (val != null) setState(() => _restSeconds = val);
             },
@@ -164,47 +166,10 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
     );
   }
 
-  Widget _buildNumberCounter({
-    required String label,
-    required int value,
-    required VoidCallback onDecrement,
-    required VoidCallback onIncrement,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: AppTypography.bodyMedium),
-          Row(
-            children: [
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(LucideIcons.minus, size: 16),
-                onPressed: onDecrement,
-              ),
-              Text('$value', style: AppTypography.titleMedium),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(LucideIcons.plus, size: 16),
-                onPressed: onIncrement,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton() {
+  Widget _buildSubmitButton(bool isEditing) {
     return ElevatedButton(
       onPressed: _handleSubmit,
-      child: const Text('Agregar a la Rutina'),
+      child: Text(isEditing ? 'Guardar Cambios' : 'Agregar a la Rutina'),
     );
   }
 
@@ -215,20 +180,19 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
     final weight = double.tryParse(_weightController.text.trim()) ?? 0.0;
     final now = DateTime.now();
 
-    final exercise = ExerciseEntity(
-      id: const Uuid().v4(),
-      routineId: '', // Assigned upon routine creation
+    widget.onExerciseAdded(ExerciseEntity(
+      id: widget.initialExercise?.id ?? const Uuid().v4(),
+      routineId: widget.initialExercise?.routineId ?? '',
       name: name,
       muscleGroup: _selectedMuscle,
       targetSets: _targetSets,
       targetReps: _targetReps,
       targetWeight: weight,
       restSeconds: _restSeconds,
-      createdAt: now,
+      orderIndex: widget.initialExercise?.orderIndex ?? 0,
+      createdAt: widget.initialExercise?.createdAt ?? now,
       updatedAt: now,
-    );
-
-    widget.onExerciseAdded(exercise);
+    ));
     Navigator.pop(context);
   }
 }

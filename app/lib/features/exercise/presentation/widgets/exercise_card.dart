@@ -5,28 +5,38 @@ import '../../domain/entities/exercise_entity.dart';
 class ExerciseCard extends StatelessWidget {
   final ExerciseEntity exercise;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   const ExerciseCard({
     super.key,
     required this.exercise,
     this.trailing,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final content = Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          _buildLeadingIndicator(),
+          const SizedBox(width: 14),
+          Expanded(child: _buildDetailsColumn()),
+          ?trailing,
+        ],
+      ),
+    );
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            _buildLeadingIndicator(),
-            const SizedBox(width: 14),
-            Expanded(child: _buildDetailsColumn()),
-            ?trailing,
-          ],
-        ),
-      ),
+      child: onTap != null
+          ? InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(16),
+              child: content,
+            )
+          : content,
     );
   }
 

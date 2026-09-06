@@ -9,6 +9,7 @@ import '../../domain/entities/routine_entity.dart';
 import '../controllers/routine_list_controller.dart';
 import '../widgets/add_exercise_sheet.dart';
 import '../widgets/exercise_card.dart';
+import '../widgets/exercise_list_empty_card.dart';
 import '../widgets/routine_details_form.dart';
 
 class RoutineEditorScreen extends ConsumerStatefulWidget {
@@ -80,7 +81,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
       children: [
         Text('Ejercicios (${_exercises.length})', style: AppTypography.titleMedium),
         TextButton.icon(
-          onPressed: _openAddExerciseSheet,
+          onPressed: () => _openExerciseSheet(),
           icon: const Icon(LucideIcons.plus, size: 18),
           label: const Text('Agregar Ejercicio'),
         ),
@@ -90,25 +91,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
 
   Widget _buildExercisesContent() {
     if (_exercises.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          children: [
-            const Icon(LucideIcons.dumbbell, size: 36, color: AppColors.textMuted),
-            const SizedBox(height: 12),
-            Text('Aún no has agregado ejercicios',
-                style: AppTypography.titleMedium.copyWith(fontSize: 15)),
-            const SizedBox(height: 4),
-            Text('Presiona "+ Agregar Ejercicio" para armar tu rutina.',
-                style: AppTypography.bodyMedium, textAlign: TextAlign.center),
-          ],
-        ),
-      );
+      return const ExerciseListEmptyCard();
     }
 
     return Column(
@@ -116,9 +99,21 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
         for (int i = 0; i < _exercises.length; i++)
           ExerciseCard(
             exercise: _exercises[i],
-            trailing: IconButton(
-              icon: const Icon(LucideIcons.trash2, color: AppColors.error, size: 20),
-              onPressed: () => setState(() => _exercises.removeAt(i)),
+            onTap: () => _openExerciseSheet(index: i),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(LucideIcons.pencil, size: 18),
+                  tooltip: 'Editar ejercicio',
+                  onPressed: () => _openExerciseSheet(index: i),
+                ),
+                IconButton(
+                  icon: const Icon(LucideIcons.trash2, color: AppColors.error, size: 18),
+                  tooltip: 'Eliminar ejercicio',
+                  onPressed: () => setState(() => _exercises.removeAt(i)),
+                ),
+              ],
             ),
           ),
       ],
@@ -143,7 +138,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     );
   }
 
-  void _openAddExerciseSheet() {
+  void _openExerciseSheet({int? index}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -152,7 +147,16 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => AddExerciseSheet(
-        onExerciseAdded: (ex) => setState(() => _exercises.add(ex)),
+        initialExercise: index != null ? _exercises[index] : null,
+        onExerciseAdded: (ex) {
+          setState(() {
+            if (index != null) {
+              _exercises[index] = ex;
+            } else {
+              _exercises.add(ex);
+            }
+          });
+        },
       ),
     );
   }
