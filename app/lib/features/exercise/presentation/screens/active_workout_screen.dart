@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../domain/entities/set_record_entity.dart';
 import '../../domain/entities/workout_session_entity.dart';
 import '../controllers/active_workout_controller.dart';
@@ -19,7 +20,16 @@ class ActiveWorkoutScreen extends ConsumerWidget {
     final groupedSets = _groupSetsByExercise(session.sets);
 
     return Scaffold(
-      appBar: _buildAppBar(context, ref),
+      appBar: AppHeader(
+        title: session.routineName,
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.x, color: AppColors.error),
+            tooltip: 'Cancelar sesión',
+            onPressed: () => _confirmCancel(context, ref),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           ListView.builder(
@@ -40,19 +50,6 @@ class ActiveWorkoutScreen extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: _buildBottomBar(context, ref),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref) {
-    return AppBar(
-      title: Text(session.routineName),
-      actions: [
-        IconButton(
-          icon: const Icon(LucideIcons.x, color: AppColors.error),
-          tooltip: 'Cancelar sesión',
-          onPressed: () => _confirmCancel(context, ref),
-        ),
-      ],
     );
   }
 

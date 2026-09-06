@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/utils/date_helpers.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../controllers/routine_list_controller.dart';
 
@@ -14,8 +15,8 @@ class WorkoutSettingsScreen extends ConsumerWidget {
     final routinesAsync = ref.watch(routinesStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gestión de Rutinas'),
+      appBar: AppHeader(
+        title: 'Gestión de Rutinas',
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.plus),
