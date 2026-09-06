@@ -3,16 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../../core/utils/date_helpers.dart';
 import '../../../../core/widgets/app_header.dart';
 import '../../domain/entities/exercise_entity.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../controllers/routine_list_controller.dart';
 import '../widgets/add_exercise_sheet.dart';
 import '../widgets/exercise_card.dart';
+import '../widgets/routine_details_form.dart';
 
 class RoutineEditorScreen extends ConsumerStatefulWidget {
-  const RoutineEditorScreen({super.key});
+  final RoutineEntity? initialRoutine;
+
+  const RoutineEditorScreen({super.key, this.initialRoutine});
 
   @override
   ConsumerState<RoutineEditorScreen> createState() => _RoutineEditorScreenState();
@@ -25,7 +27,23 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
   final List<ExerciseEntity> _exercises = [];
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_onTextChanged);
+    if (widget.initialRoutine != null) {
+      final routine = widget.initialRoutine!;
+      _nameController.text = routine.name;
+      _descController.text = routine.description ?? '';
+      _selectedDay = routine.targetDay;
+      _exercises.addAll(routine.exercises);
+    }
+  }
+
+  void _onTextChanged() => setState(() {});
+
+  @override
   void dispose() {
+    _nameController.removeListener(_onTextChanged);
     _nameController.dispose();
     _descController.dispose();
     super.dispose();
@@ -33,59 +51,26 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.initialRoutine != null;
+
     return Scaffold(
-      appBar: const AppHeader(title: 'Nueva Rutina'),
+      appBar: AppHeader(title: isEditing ? 'Editar Rutina' : 'Nueva Rutina'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildRoutineDetailsCard(),
+          RoutineDetailsForm(
+            nameController: _nameController,
+            descController: _descController,
+            selectedDay: _selectedDay,
+            onDayChanged: (val) => setState(() => _selectedDay = val),
+          ),
           const SizedBox(height: 24),
           _buildExercisesSectionHeader(),
           const SizedBox(height: 12),
           _buildExercisesContent(),
         ],
       ),
-      bottomNavigationBar: _buildBottomBar(),
-    );
-  }
-
-  Widget _buildRoutineDetailsCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre de la rutina',
-                hintText: 'Ej. Pierna & Glúteos',
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descController,
-              decoration: const InputDecoration(
-                labelText: 'Descripción (opcional)',
-                hintText: 'Ej. Enfoque en cuádriceps y gemelos',
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<int?>(
-              initialValue: _selectedDay,
-              decoration: const InputDecoration(labelText: 'Día programado'),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('Plantilla Huérfana')),
-                for (int i = 1; i <= 7; i++)
-                  DropdownMenuItem(value: i, child: Text(DateHelpers.getDayName(i))),
-              ],
-              onChanged: (val) => setState(() => _selectedDay = val),
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildBottomBar(isEditing),
     );
   }
 
@@ -148,7 +133,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(bool isEditing) {
     final canSave = _nameController.text.trim().isNotEmpty;
 
     return Container(
@@ -161,7 +146,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
         top: false,
         child: ElevatedButton(
           onPressed: canSave ? _saveRoutine : null,
-          child: const Text('Guardar Rutina'),
+          child: Text(isEditing ? 'Guardar Cambios' : 'Guardar Rutina'),
         ),
       ),
     );
@@ -187,13 +172,15 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
 
     final now = DateTime.now();
     final routine = RoutineEntity(
-      id: const Uuid().v4(),
+      id: widget.initialRoutine?.id ?? const Uuid().v4(),
       name: name,
       description: _descController.text.trim().isEmpty
           ? null
           : _descController.text.trim(),
       targetDay: _selectedDay,
-      createdAt: now,
+      isActive: widget.initialRoutine?.isActive ?? true,
+      orderIndex: widget.initialRoutine?.orderIndex ?? 0,
+      createdAt: widget.initialRoutine?.createdAt ?? now,
       updatedAt: now,
     );
 

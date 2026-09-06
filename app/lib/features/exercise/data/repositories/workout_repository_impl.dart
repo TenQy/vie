@@ -110,6 +110,13 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   }
 
   @override
+  Future<void> deleteRoutineExercises(String routineId) async {
+    await (_db.delete(_db.routineExercises)
+          ..where((tbl) => tbl.routineId.equals(routineId)))
+        .go();
+  }
+
+  @override
   Stream<WorkoutSessionEntity?> watchActiveSession() {
     return (_db.select(_db.workoutSessions)
           ..where((tbl) => tbl.status.equals('active'))

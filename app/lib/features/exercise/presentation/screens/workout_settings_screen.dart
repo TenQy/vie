@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../../core/utils/date_helpers.dart';
 import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../controllers/routine_list_controller.dart';
-
+import '../widgets/routine_management_card.dart';
 import 'routine_editor_screen.dart';
 
 class WorkoutSettingsScreen extends ConsumerWidget {
@@ -44,8 +44,19 @@ class WorkoutSettingsScreen extends ConsumerWidget {
     List<RoutineEntity> routines,
   ) {
     if (routines.isEmpty) {
-      return Center(
-        child: Text('No hay rutinas guardadas', style: AppTypography.bodyLarge),
+      return EmptyState(
+        icon: LucideIcons.calendar,
+        title: 'No hay rutinas creadas',
+        description:
+            'Crea plantillas personalizadas para estructurar tus entrenamientos semanales.',
+        action: ElevatedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const RoutineEditorScreen()),
+          ),
+          icon: const Icon(LucideIcons.plus),
+          label: const Text('Crear Primera Rutina'),
+        ),
       );
     }
 
@@ -54,21 +65,15 @@ class WorkoutSettingsScreen extends ConsumerWidget {
       itemCount: routines.length,
       itemBuilder: (context, index) {
         final routine = routines[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            title: Text(routine.name, style: AppTypography.titleMedium),
-            subtitle: Text(
-              routine.targetDay != null
-                  ? 'Asignado: ${DateHelpers.getDayName(routine.targetDay!)} • ${routine.exercises.length} ejercicios'
-                  : 'Plantilla huérfana • ${routine.exercises.length} ejercicios',
-              style: AppTypography.bodyMedium,
-            ),
-            trailing: IconButton(
-              icon: const Icon(LucideIcons.trash2, color: AppColors.error, size: 20),
-              onPressed: () => _confirmDelete(context, ref, routine),
+        return RoutineManagementCard(
+          routine: routine,
+          onEdit: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RoutineEditorScreen(initialRoutine: routine),
             ),
           ),
+          onDelete: () => _confirmDelete(context, ref, routine),
         );
       },
     );

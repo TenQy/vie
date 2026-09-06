@@ -51,6 +51,7 @@ class RoutineListController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await _repository.saveRoutine(routine);
+      await _repository.deleteRoutineExercises(routine.id);
       for (int i = 0; i < exercises.length; i++) {
         final ex = exercises[i];
         await _repository.saveRoutineExercise(
