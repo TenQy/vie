@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../domain/entities/exercise_entity.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../../domain/repositories/workout_repository.dart';
 import '../providers/workout_repository_provider.dart';
@@ -41,6 +42,25 @@ class RoutineListController extends StateNotifier<AsyncValue<void>> {
     );
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _repository.saveRoutine(routine));
+  }
+
+  Future<void> saveRoutineWithExercises({
+    required RoutineEntity routine,
+    required List<ExerciseEntity> exercises,
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await _repository.saveRoutine(routine);
+      for (int i = 0; i < exercises.length; i++) {
+        final ex = exercises[i];
+        await _repository.saveRoutineExercise(
+          ex.copyWith(
+            routineId: routine.id,
+            orderIndex: i,
+          ),
+        );
+      }
+    });
   }
 }
 

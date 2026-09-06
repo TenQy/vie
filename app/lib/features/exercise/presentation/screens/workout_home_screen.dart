@@ -13,6 +13,7 @@ import '../providers/workout_repository_provider.dart';
 import '../widgets/active_session_banner.dart';
 import '../widgets/exercise_card.dart';
 import 'active_workout_screen.dart';
+import 'routine_editor_screen.dart';
 import 'workout_settings_screen.dart';
 
 class WorkoutHomeScreen extends ConsumerWidget {
@@ -88,7 +89,7 @@ class WorkoutHomeScreen extends ConsumerWidget {
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const WorkoutSettingsScreen(),
+                    builder: (_) => const RoutineEditorScreen(),
                   ),
                 ),
                 icon: const Icon(LucideIcons.plus),

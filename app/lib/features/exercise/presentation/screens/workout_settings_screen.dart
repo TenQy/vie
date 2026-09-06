@@ -7,6 +7,8 @@ import '../../../../core/widgets/app_header.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../controllers/routine_list_controller.dart';
 
+import 'routine_editor_screen.dart';
+
 class WorkoutSettingsScreen extends ConsumerWidget {
   const WorkoutSettingsScreen({super.key});
 
@@ -21,7 +23,10 @@ class WorkoutSettingsScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(LucideIcons.plus),
             tooltip: 'Nueva Rutina',
-            onPressed: () => _showCreateRoutineDialog(context, ref),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RoutineEditorScreen()),
+            ),
           ),
         ],
       ),
@@ -66,70 +71,6 @@ class WorkoutSettingsScreen extends ConsumerWidget {
           ),
         );
       },
-    );
-  }
-
-  void _showCreateRoutineDialog(BuildContext context, WidgetRef ref) {
-    final nameController = TextEditingController();
-    final descController = TextEditingController();
-    int? selectedDay;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Nueva Rutina', style: AppTypography.titleLarge),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nombre de rutina'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descController,
-                decoration: const InputDecoration(labelText: 'Descripción (opcional)'),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<int?>(
-                initialValue: selectedDay,
-                decoration: const InputDecoration(labelText: 'Día programado'),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('Plantilla Huérfana')),
-                  for (int i = 1; i <= 7; i++)
-                    DropdownMenuItem(value: i, child: Text(DateHelpers.getDayName(i))),
-                ],
-                onChanged: (val) => setState(() => selectedDay = val),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (nameController.text.trim().isEmpty) return;
-                  ref.read(routineListControllerProvider.notifier).createRoutine(
-                        name: nameController.text.trim(),
-                        description: descController.text.trim().isEmpty
-                            ? null
-                            : descController.text.trim(),
-                        targetDay: selectedDay,
-                      );
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Crear Rutina'),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
