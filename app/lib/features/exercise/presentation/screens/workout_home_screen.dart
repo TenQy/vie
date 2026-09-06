@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/utils/date_helpers.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../controllers/active_workout_controller.dart';
 import '../controllers/routine_list_controller.dart';
@@ -21,37 +22,24 @@ class WorkoutHomeScreen extends ConsumerWidget {
     final routinesAsync = ref.watch(routinesStreamProvider);
 
     return Scaffold(
-      appBar: _buildAppBar(context),
+      appBar: AppHeader(
+        title: 'Entrenamiento',
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.settings),
+            tooltip: 'Gestión de rutinas',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const WorkoutSettingsScreen()),
+            ),
+          ),
+        ],
+      ),
       body: routinesAsync.when(
         data: (routines) => _buildContent(context, ref, routines, activeSessionAsync),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error al cargar rutinas: $err')),
       ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            DateHelpers.getDayName(DateHelpers.currentDayOfWeek).toUpperCase(),
-            style: AppTypography.labelSmall.copyWith(color: AppColors.primary),
-          ),
-          Text('Entrenamiento', style: AppTypography.titleLarge),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(LucideIcons.settings),
-          tooltip: 'Gestión de rutinas',
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const WorkoutSettingsScreen()),
-          ),
-        ),
-      ],
     );
   }
 
