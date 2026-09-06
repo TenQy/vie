@@ -23,13 +23,16 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surface,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: centerTitle,
       leading: leading,
       title: _buildTitle(),
       actions: actions,
+      shape: const Border(
+        bottom: BorderSide(color: AppColors.border, width: 1),
+      ),
     );
   }
 
