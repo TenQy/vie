@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../../core/widgets/number_counter.dart';
 import '../../domain/entities/set_record_entity.dart';
+import 'metric_stepper_input.dart';
 
 class CurrentExerciseCard extends StatefulWidget {
   final SetRecordEntity currentSet;
@@ -122,54 +122,26 @@ class _CurrentExerciseCardState extends State<CurrentExerciseCard> {
     return Row(
       children: [
         Expanded(
-          child: NumberCounter(
-            label: 'Reps',
+          child: MetricStepperInput(
+            label: 'REPS',
             value: _reps,
-            onDecrement: () =>
-                setState(() => _reps = (_reps > 1) ? _reps - 1 : 1),
-            onIncrement: () => setState(() => _reps++),
+            minValue: 1,
+            step: 1,
+            onChanged: (val) => setState(() => _reps = val.toInt()),
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(child: _buildWeightCounter()),
-      ],
-    );
-  }
-
-  Widget _buildWeightCounter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Peso', style: AppTypography.bodyMedium),
-          Row(
-            children: [
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(LucideIcons.minus, size: 16),
-                onPressed: () => setState(() {
-                  _weight = (_weight >= 2.5) ? _weight - 2.5 : 0.0;
-                }),
-              ),
-              Text(
-                _weight % 1 == 0 ? '${_weight.toInt()}k' : '${_weight}k',
-                style: AppTypography.titleMedium,
-              ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(LucideIcons.plus, size: 16),
-                onPressed: () => setState(() => _weight += 2.5),
-              ),
-            ],
+        Expanded(
+          child: MetricStepperInput(
+            label: 'PESO (KG)',
+            value: _weight,
+            isDecimal: true,
+            minValue: 0,
+            step: 2.5,
+            onChanged: (val) => setState(() => _weight = val.toDouble()),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
