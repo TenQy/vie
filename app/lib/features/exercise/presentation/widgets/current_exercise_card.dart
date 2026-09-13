@@ -9,8 +9,6 @@ class CurrentExerciseCard extends StatefulWidget {
   final int totalSetsForExercise;
   final Function(int reps, double weight) onCompleteSet;
   final VoidCallback onSkipSet;
-  final VoidCallback? onPreviousSet;
-  final VoidCallback? onNextSet;
 
   const CurrentExerciseCard({
     super.key,
@@ -18,8 +16,6 @@ class CurrentExerciseCard extends StatefulWidget {
     required this.totalSetsForExercise,
     required this.onCompleteSet,
     required this.onSkipSet,
-    this.onPreviousSet,
-    this.onNextSet,
   });
 
   @override
@@ -77,8 +73,8 @@ class _CurrentExerciseCardState extends State<CurrentExerciseCard> {
             _buildInputsRow(),
             const SizedBox(height: 18),
             _buildCompleteButton(),
-            const SizedBox(height: 10),
-            _buildNavigationAndSkipRow(),
+            const SizedBox(height: 6),
+            _buildSkipButton(),
           ],
         ),
       ),
@@ -129,14 +125,13 @@ class _CurrentExerciseCardState extends State<CurrentExerciseCard> {
           child: NumberCounter(
             label: 'Reps',
             value: _reps,
-            onDecrement: () => setState(() => _reps = (_reps > 1) ? _reps - 1 : 1),
+            onDecrement: () =>
+                setState(() => _reps = (_reps > 1) ? _reps - 1 : 1),
             onIncrement: () => setState(() => _reps++),
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: _buildWeightCounter(),
-        ),
+        Expanded(child: _buildWeightCounter()),
       ],
     );
   }
@@ -183,31 +178,21 @@ class _CurrentExerciseCardState extends State<CurrentExerciseCard> {
 
     return ElevatedButton.icon(
       onPressed: () => widget.onCompleteSet(_reps, _weight),
-      icon: Icon(isCompleted ? LucideIcons.checkCheck : LucideIcons.check, size: 20),
+      icon: Icon(
+        isCompleted ? LucideIcons.checkCheck : LucideIcons.check,
+        size: 20,
+      ),
       label: Text(isCompleted ? 'Actualizar Serie' : 'Completar Serie'),
     );
   }
 
-  Widget _buildNavigationAndSkipRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          icon: const Icon(LucideIcons.chevronLeft),
-          tooltip: 'Serie anterior',
-          onPressed: widget.onPreviousSet,
-        ),
-        TextButton.icon(
-          onPressed: widget.onSkipSet,
-          icon: const Icon(LucideIcons.skipForward, size: 16),
-          label: const Text('Saltar Serie'),
-        ),
-        IconButton(
-          icon: const Icon(LucideIcons.chevronRight),
-          tooltip: 'Siguiente serie',
-          onPressed: widget.onNextSet,
-        ),
-      ],
+  Widget _buildSkipButton() {
+    return Center(
+      child: TextButton.icon(
+        onPressed: widget.onSkipSet,
+        icon: const Icon(LucideIcons.skipForward, size: 16),
+        label: const Text('Saltar Serie'),
+      ),
     );
   }
 }
