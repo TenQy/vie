@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/features/exercise/presentation/controllers/rest_timer_controller.dart';
@@ -5,7 +6,33 @@ import 'package:app/features/exercise/presentation/widgets/rest_time_picker_shee
 
 void main() {
   group('RestTimePickerSheet', () {
-    testWidgets('displays preset chips and triggers onSelect',
+    testWidgets('displays CupertinoTimerPicker, presets and triggers onSelect',
+        (WidgetTester tester) async {
+      int? selectedSeconds;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RestTimePickerSheet(
+              currentSeconds: 90,
+              onSelect: (s) => selectedSeconds = s,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Ajustar tiempo de descanso'), findsOneWidget);
+      expect(find.byType(CupertinoTimerPicker), findsOneWidget);
+      expect(find.text('1:30'), findsOneWidget);
+      expect(find.text('Aplicar (01:30)'), findsOneWidget);
+
+      await tester.tap(find.text('Aplicar (01:30)'));
+      await tester.pumpAndSettle();
+
+      expect(selectedSeconds, 90);
+    });
+
+    testWidgets('tapping quick preset triggers onSelect directly',
         (WidgetTester tester) async {
       int? selectedSeconds;
 
@@ -20,14 +47,10 @@ void main() {
         ),
       );
 
-      expect(find.text('Ajustar tiempo de descanso'), findsOneWidget);
-      expect(find.text('90s'), findsOneWidget);
-      expect(find.text('2 min'), findsOneWidget);
-
-      await tester.tap(find.text('90s'));
+      await tester.tap(find.text('2m'));
       await tester.pumpAndSettle();
 
-      expect(selectedSeconds, 90);
+      expect(selectedSeconds, 120);
     });
   });
 
