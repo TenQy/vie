@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/workout_alert_service.dart';
 
 class RestTimerState {
   final int remainingSeconds;
@@ -31,42 +32,36 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
   RestTimerNotifier() : super(const RestTimerState());
 
   void start(int seconds) {
-    _timer?.cancel();
     state = RestTimerState(
       remainingSeconds: seconds,
       totalSeconds: seconds,
       isRunning: true,
     );
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.remainingSeconds <= 1) {
-        stop();
-      } else {
-        state = state.copyWith(
-          remainingSeconds: state.remainingSeconds - 1,
-        );
-      }
-    });
+    _startTimer();
   }
 
-  void add30Seconds() {
-    if (state.remainingSeconds == 0) {
-      start(30);
-    } else {
-      state = state.copyWith(
-        remainingSeconds: state.remainingSeconds + 30,
-        totalSeconds: state.totalSeconds + 30,
-      );
+  void setTime(int seconds) {
+    final running = state.isRunning;
+    state = state.copyWith(
+      remainingSeconds: seconds,
+      totalSeconds: seconds,
+    );
+    if (running && _timer == null) {
+      _startTimer();
     }
   }
 
-  void add60Seconds() {
+  void add30Seconds() => _addSeconds(30);
+
+  void add60Seconds() => _addSeconds(60);
+
+  void _addSeconds(int seconds) {
     if (state.remainingSeconds == 0) {
-      start(60);
+      start(seconds);
     } else {
       state = state.copyWith(
-        remainingSeconds: state.remainingSeconds + 60,
-        totalSeconds: state.totalSeconds + 60,
+        remainingSeconds: state.remainingSeconds + seconds,
+        totalSeconds: state.totalSeconds + seconds,
       );
     }
   }
@@ -83,27 +78,34 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 
   void pause() {
     _timer?.cancel();
+    _timer = null;
     state = state.copyWith(isRunning: false);
   }
 
   void resume() {
     if (state.remainingSeconds <= 0) return;
     state = state.copyWith(isRunning: true);
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.remainingSeconds <= 1) {
-        stop();
-      } else {
-        state = state.copyWith(
-          remainingSeconds: state.remainingSeconds - 1,
-        );
-      }
-    });
+    _startTimer();
   }
 
   void stop() {
     _timer?.cancel();
     _timer = null;
     state = const RestTimerState();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
+  void _tick() {
+    if (state.remainingSeconds <= 1) {
+      WorkoutAlertService.notifyRestCompleted();
+      stop();
+    } else {
+      state = state.copyWith(remainingSeconds: state.remainingSeconds - 1);
+    }
   }
 
   @override

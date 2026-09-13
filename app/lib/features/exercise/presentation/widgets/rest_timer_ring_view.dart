@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
 import '../../domain/entities/set_record_entity.dart';
 import 'glowing_timer_ring.dart';
+import 'rest_time_picker_sheet.dart';
 
 class RestTimerRingView extends StatelessWidget {
   final int remainingSeconds;
@@ -15,6 +16,7 @@ class RestTimerRingView extends StatelessWidget {
   final VoidCallback onSubtract15Seconds;
   final VoidCallback onTogglePause;
   final VoidCallback onSkipRest;
+  final ValueChanged<int> onSetTime;
 
   const RestTimerRingView({
     super.key,
@@ -27,6 +29,7 @@ class RestTimerRingView extends StatelessWidget {
     required this.onSubtract15Seconds,
     required this.onTogglePause,
     required this.onSkipRest,
+    required this.onSetTime,
   });
 
   @override
@@ -41,6 +44,7 @@ class RestTimerRingView extends StatelessWidget {
               remainingSeconds: remainingSeconds,
               totalSeconds: totalSeconds,
               isRunning: isRunning,
+              onTapTime: () => _showTimePicker(context),
             ),
             const SizedBox(height: 32),
             _buildQuickControls(),
@@ -50,6 +54,21 @@ class RestTimerRingView extends StatelessWidget {
             if (nextSet != null) _buildPreparationCard(nextSet!),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showTimePicker(BuildContext context) {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => RestTimePickerSheet(
+        currentSeconds: remainingSeconds,
+        onSelect: onSetTime,
       ),
     );
   }

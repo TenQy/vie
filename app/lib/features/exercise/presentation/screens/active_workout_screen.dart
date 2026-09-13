@@ -55,7 +55,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (restTimer.remainingSeconds > 0) {
       return Scaffold(
-        appBar: _buildRestAppBar(context, session.routineName, session),
+        appBar: _buildAppBar(
+          title: session.routineName,
+          tooltip: 'Cancelar descanso y deshacer serie',
+          onPressed: () => _handleCancelRest(session),
+        ),
         body: RestTimerRingView(
           remainingSeconds: restTimer.remainingSeconds,
           totalSeconds: restTimer.totalSeconds,
@@ -72,6 +76,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
             restTimer.isRunning ? n.pause() : n.resume();
           },
           onSkipRest: () => ref.read(restTimerProvider.notifier).stop(),
+          onSetTime: (s) => ref.read(restTimerProvider.notifier).setTime(s),
         ),
       );
     }
@@ -85,7 +90,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final completedCount = session.sets.where((s) => s.isCompleted).length;
 
     return Scaffold(
-      appBar: _buildWorkoutAppBar(context, session.routineName, session.id),
+      appBar: _buildAppBar(
+        title: session.routineName,
+        tooltip: 'Cancelar sesión',
+        onPressed: () => _confirmCancel(session.id),
+      ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
@@ -113,46 +122,33 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
-  PreferredSizeWidget _buildRestAppBar(
-    BuildContext context,
-    String title,
-    WorkoutSessionEntity session,
-  ) {
+  PreferredSizeWidget _buildAppBar({
+    required String title,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
     return AppHeader(
       title: title,
       actions: [
         IconButton(
           icon: const Icon(LucideIcons.x, color: AppColors.error),
-          tooltip: 'Cancelar descanso y deshacer serie',
-          onPressed: () => _handleCancelRest(session),
+          tooltip: tooltip,
+          onPressed: onPressed,
         ),
       ],
     );
   }
 
-  PreferredSizeWidget _buildWorkoutAppBar(
-    BuildContext context,
-    String title,
-    String sessionId,
-  ) {
-    return AppHeader(
-      title: title,
-      actions: [
-        IconButton(
-          icon: const Icon(LucideIcons.x, color: AppColors.error),
-          tooltip: 'Cancelar sesión',
-          onPressed: () => WorkoutDialogs.confirmCancel(
-            context: context,
-            onConfirm: () {
-              ref
-                  .read(activeWorkoutControllerProvider.notifier)
-                  .cancelWorkout(sessionId);
-              ref.read(restTimerProvider.notifier).stop();
-              Navigator.pop(context);
-            },
-          ),
-        ),
-      ],
+  void _confirmCancel(String sessionId) {
+    WorkoutDialogs.confirmCancel(
+      context: context,
+      onConfirm: () {
+        ref
+            .read(activeWorkoutControllerProvider.notifier)
+            .cancelWorkout(sessionId);
+        ref.read(restTimerProvider.notifier).stop();
+        Navigator.pop(context);
+      },
     );
   }
 

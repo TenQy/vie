@@ -7,12 +7,14 @@ class GlowingTimerRing extends StatefulWidget {
   final int remainingSeconds;
   final int totalSeconds;
   final bool isRunning;
+  final VoidCallback? onTapTime;
 
   const GlowingTimerRing({
     super.key,
     required this.remainingSeconds,
     required this.totalSeconds,
     required this.isRunning,
+    this.onTapTime,
   });
 
   @override
@@ -81,26 +83,32 @@ class _GlowingTimerRingState extends State<GlowingTimerRing>
               size: const Size(240, 240),
               painter: _RingPainter(progress: progress),
             ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildStatusBadge(),
-                const SizedBox(height: 8),
-                Text(
-                  DateHelpers.formatDuration(widget.remainingSeconds),
-                  style: AppTypography.metricValue.copyWith(
-                    fontSize: 48,
-                    letterSpacing: -1.0,
+            GestureDetector(
+              onTap: widget.onTapTime,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildStatusBadge(),
+                  const SizedBox(height: 8),
+                  Text(
+                    DateHelpers.formatDuration(widget.remainingSeconds),
+                    style: AppTypography.metricValue.copyWith(
+                      fontSize: 48,
+                      letterSpacing: -1.0,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.isRunning ? 'Inhala y exhala' : 'En pausa',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.textMuted,
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.onTapTime != null
+                        ? 'Toca para cambiar'
+                        : (widget.isRunning ? 'Inhala y exhala' : 'En pausa'),
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
