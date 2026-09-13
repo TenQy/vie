@@ -25,6 +25,7 @@ class ActiveWorkoutScreen extends ConsumerStatefulWidget {
 
 class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   int _currentSetIndex = 0;
+  String? _lastCompletedSetId;
 
   @override
   void initState() {
@@ -53,7 +54,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     if (restTimer.remainingSeconds > 0) {
       return Scaffold(
-        appBar: _buildAppBar(context, session.routineName, session.id),
+        appBar: _buildRestAppBar(context, session.routineName, session),
         body: RestTimerRingView(
           remainingSeconds: restTimer.remainingSeconds,
           totalSeconds: restTimer.totalSeconds,
@@ -81,7 +82,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final completedCount = session.sets.where((s) => s.isCompleted).length;
 
     return Scaffold(
-      appBar: _buildAppBar(context, session.routineName, session.id),
+      appBar: _buildWorkoutAppBar(context, session.routineName, session.id),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
@@ -107,7 +108,24 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(
+  PreferredSizeWidget _buildRestAppBar(
+    BuildContext context,
+    String title,
+    WorkoutSessionEntity session,
+  ) {
+    return AppHeader(
+      title: title,
+      actions: [
+        IconButton(
+          icon: const Icon(LucideIcons.x, color: AppColors.error),
+          tooltip: 'Cancelar descanso y deshacer serie',
+          onPressed: () => _handleCancelRest(session),
+        ),
+      ],
+    );
+  }
+
+  PreferredSizeWidget _buildWorkoutAppBar(
     BuildContext context,
     String title,
     String sessionId,
@@ -166,6 +184,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     double weight,
     int totalSets,
   ) {
+    _lastCompletedSetId = currentSet.id;
     ref
         .read(activeWorkoutControllerProvider.notifier)
         .completeSet(currentSet, reps: reps, weight: weight);
@@ -177,6 +196,29 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final rest =
         currentSet.restTimeSeconds > 0 ? currentSet.restTimeSeconds : 90;
     ref.read(restTimerProvider.notifier).start(rest);
+  }
+
+  void _handleCancelRest(WorkoutSessionEntity session) {
+    WorkoutDialogs.confirmCancelRest(
+      context: context,
+      onConfirm: () {
+        ref.read(restTimerProvider.notifier).stop();
+        if (_lastCompletedSetId != null) {
+          final targetIndex =
+              session.sets.indexWhere((s) => s.id == _lastCompletedSetId);
+          if (targetIndex != -1) {
+            final setToRevert = session.sets[targetIndex];
+            ref
+                .read(activeWorkoutControllerProvider.notifier)
+                .revertSetCompletion(setToRevert);
+            setState(() {
+              _currentSetIndex = targetIndex;
+              _lastCompletedSetId = null;
+            });
+          }
+        }
+      },
+    );
   }
 
   void _handleSkipSet(int totalSets) {

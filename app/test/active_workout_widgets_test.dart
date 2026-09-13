@@ -5,6 +5,7 @@ import 'package:app/features/exercise/domain/entities/set_record_entity.dart';
 import 'package:app/features/exercise/presentation/widgets/active_workout_progress_bar.dart';
 import 'package:app/features/exercise/presentation/widgets/current_exercise_card.dart';
 import 'package:app/features/exercise/presentation/widgets/rest_timer_ring_view.dart';
+import 'package:app/features/exercise/presentation/widgets/workout_dialogs.dart';
 
 void main() {
   group('ActiveWorkoutProgressBar', () {
@@ -145,6 +146,41 @@ void main() {
       await tester.pump();
 
       expect(toggleCalled, isTrue);
+    });
+  });
+
+  group('WorkoutDialogs', () {
+    testWidgets('confirmCancelRest shows dialog and triggers onConfirm',
+        (WidgetTester tester) async {
+      bool confirmed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => WorkoutDialogs.confirmCancelRest(
+                  context: context,
+                  onConfirm: () => confirmed = true,
+                ),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('¿Cancelar Descanso?'), findsOneWidget);
+      expect(find.text('Deshacer serie'), findsOneWidget);
+
+      await tester.tap(find.text('Deshacer serie'));
+      await tester.pumpAndSettle();
+
+      expect(confirmed, isTrue);
+      expect(find.text('¿Cancelar Descanso?'), findsNothing);
     });
   });
 }

@@ -54,4 +54,33 @@ abstract final class WorkoutDialogs {
       ),
     );
   }
+
+  static void confirmCancelRest({
+    required BuildContext context,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Cancelar Descanso?'),
+        content: const Text(
+          'La serie volverá a quedar pendiente y no se guardará ningún dato.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Continuar descanso'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onConfirm();
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Deshacer serie'),
+          ),
+        ],
+      ),
+    );
+  }
 }
