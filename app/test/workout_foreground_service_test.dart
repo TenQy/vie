@@ -17,6 +17,7 @@ void main() {
       await WorkoutForegroundService.startWorkout(routineName: 'Push Day');
       await WorkoutForegroundService.updateRest(
         remainingSeconds: 60,
+        totalSeconds: 90,
         nextExercise: 'Press Banca',
         isRunning: true,
       );

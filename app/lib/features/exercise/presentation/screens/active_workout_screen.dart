@@ -117,13 +117,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
         session: session,
         currentSet: currentSet,
         nextSet: nextSet,
-        onCompleteSet: (reps, weight) => _handleCompleteSet(
-          currentSet,
-          reps,
-          weight,
-          session.sets.length,
-          nextSet?.exerciseName,
-        ),
+        onCompleteSet: (reps, weight) {
+          final totalNext = nextSet == null ? null : session.sets.where((s) => s.exerciseName == nextSet.exerciseName).length;
+          _handleCompleteSet(currentSet, reps, weight, session.sets.length, nextSet, totalNext);
+        },
         onSkipSet: () => _handleSkipSet(session.sets.length),
       ),
       bottomNavigationBar: ActiveWorkoutBottomBar(
@@ -137,8 +134,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
         IconButton(icon: const Icon(LucideIcons.x, color: AppColors.error), tooltip: tip, onPressed: fn),
       ]);
 
-  void _endWorkout(void Function(String) action, String sessionId) {
-    action(sessionId);
+  void _endWorkout(void Function(String) action, String id) {
+    action(id);
     ref.read(restTimerProvider.notifier).stop();
     WorkoutForegroundService.stop();
     Navigator.pop(context);
@@ -148,7 +145,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
         context: context,
         onConfirm: () => _endWorkout(ref.read(activeWorkoutControllerProvider.notifier).cancelWorkout, id),
       );
-
   void _confirmFinish(String id) => WorkoutDialogs.confirmFinish(
         context: context,
         onConfirm: () => _endWorkout(ref.read(activeWorkoutControllerProvider.notifier).finishWorkout, id),
@@ -159,15 +155,21 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
     int reps,
     double weight,
     int total,
-    String? nextEx,
+    SetRecordEntity? next,
+    int? nextTotal,
   ) {
     _lastCompletedSetId = set.id;
-    ref
-        .read(activeWorkoutControllerProvider.notifier)
-        .completeSet(set, reps: reps, weight: weight);
+    ref.read(activeWorkoutControllerProvider.notifier).completeSet(set, reps: reps, weight: weight);
     if (_currentSetIndex < total - 1) setState(() => _currentSetIndex++);
     final rest = set.restTimeSeconds > 0 ? set.restTimeSeconds : 90;
-    ref.read(restTimerProvider.notifier).start(rest, nextExerciseName: nextEx);
+    ref.read(restTimerProvider.notifier).start(
+          rest,
+          nextExerciseName: next?.exerciseName,
+          nextSetNumber: next?.setNumber,
+          totalSetsForExercise: nextTotal,
+          nextTargetReps: next?.targetReps,
+          nextTargetWeight: next?.targetWeight,
+        );
   }
 
   void _handleCancelRest(WorkoutSessionEntity session) =>

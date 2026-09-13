@@ -8,12 +8,20 @@ class RestTimerState {
   final int totalSeconds;
   final bool isRunning;
   final String? nextExerciseName;
+  final int? nextSetNumber;
+  final int? totalSetsForExercise;
+  final int? nextTargetReps;
+  final double? nextTargetWeight;
 
   const RestTimerState({
     this.remainingSeconds = 0,
     this.totalSeconds = 0,
     this.isRunning = false,
     this.nextExerciseName,
+    this.nextSetNumber,
+    this.totalSetsForExercise,
+    this.nextTargetReps,
+    this.nextTargetWeight,
   });
 
   RestTimerState copyWith({
@@ -21,12 +29,21 @@ class RestTimerState {
     int? totalSeconds,
     bool? isRunning,
     String? nextExerciseName,
+    int? nextSetNumber,
+    int? totalSetsForExercise,
+    int? nextTargetReps,
+    double? nextTargetWeight,
   }) {
     return RestTimerState(
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       totalSeconds: totalSeconds ?? this.totalSeconds,
       isRunning: isRunning ?? this.isRunning,
       nextExerciseName: nextExerciseName ?? this.nextExerciseName,
+      nextSetNumber: nextSetNumber ?? this.nextSetNumber,
+      totalSetsForExercise:
+          totalSetsForExercise ?? this.totalSetsForExercise,
+      nextTargetReps: nextTargetReps ?? this.nextTargetReps,
+      nextTargetWeight: nextTargetWeight ?? this.nextTargetWeight,
     );
   }
 }
@@ -36,30 +53,46 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 
   RestTimerNotifier() : super(const RestTimerState());
 
-  void start(int seconds, {String? nextExerciseName}) {
+  void start(
+    int seconds, {
+    String? nextExerciseName,
+    int? nextSetNumber,
+    int? totalSetsForExercise,
+    int? nextTargetReps,
+    double? nextTargetWeight,
+  }) {
     state = RestTimerState(
       remainingSeconds: seconds,
       totalSeconds: seconds,
       isRunning: true,
       nextExerciseName: nextExerciseName ?? state.nextExerciseName,
+      nextSetNumber: nextSetNumber ?? state.nextSetNumber,
+      totalSetsForExercise:
+          totalSetsForExercise ?? state.totalSetsForExercise,
+      nextTargetReps: nextTargetReps ?? state.nextTargetReps,
+      nextTargetWeight: nextTargetWeight ?? state.nextTargetWeight,
     );
-    WorkoutForegroundService.updateRest(
-      remainingSeconds: seconds,
-      nextExercise: state.nextExerciseName,
-      isRunning: true,
-    );
+    _syncService();
     _startTimer();
   }
 
-  void setTime(int seconds) {
-    final running = state.isRunning;
+  void _syncService({bool? running}) {
     WorkoutForegroundService.updateRest(
-      remainingSeconds: seconds,
+      remainingSeconds: state.remainingSeconds,
+      totalSeconds: state.totalSeconds,
       nextExercise: state.nextExerciseName,
-      isRunning: running,
+      setNumber: state.nextSetNumber,
+      totalSets: state.totalSetsForExercise,
+      targetReps: state.nextTargetReps,
+      targetWeight: state.nextTargetWeight,
+      isRunning: running ?? state.isRunning,
     );
+  }
+
+  void setTime(int seconds) {
     state = state.copyWith(remainingSeconds: seconds, totalSeconds: seconds);
-    if (running && _timer == null) _startTimer();
+    _syncService();
+    if (state.isRunning && _timer == null) _startTimer();
   }
 
   void add30Seconds() => _addSeconds(30);
@@ -70,16 +103,11 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     if (state.remainingSeconds == 0) {
       start(seconds);
     } else {
-      final updated = state.remainingSeconds + seconds;
-      WorkoutForegroundService.updateRest(
-        remainingSeconds: updated,
-        nextExercise: state.nextExerciseName,
-        isRunning: state.isRunning,
-      );
       state = state.copyWith(
-        remainingSeconds: updated,
+        remainingSeconds: state.remainingSeconds + seconds,
         totalSeconds: state.totalSeconds + seconds,
       );
+      _syncService();
     }
   }
 
@@ -87,13 +115,8 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     if (state.remainingSeconds <= 15) {
       stop();
     } else {
-      final updated = state.remainingSeconds - 15;
-      WorkoutForegroundService.updateRest(
-        remainingSeconds: updated,
-        nextExercise: state.nextExerciseName,
-        isRunning: state.isRunning,
-      );
-      state = state.copyWith(remainingSeconds: updated);
+      state = state.copyWith(remainingSeconds: state.remainingSeconds - 15);
+      _syncService();
     }
   }
 
@@ -101,21 +124,13 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     _timer?.cancel();
     _timer = null;
     state = state.copyWith(isRunning: false);
-    WorkoutForegroundService.updateRest(
-      remainingSeconds: state.remainingSeconds,
-      nextExercise: state.nextExerciseName,
-      isRunning: false,
-    );
+    _syncService(running: false);
   }
 
   void resume() {
     if (state.remainingSeconds <= 0) return;
     state = state.copyWith(isRunning: true);
-    WorkoutForegroundService.updateRest(
-      remainingSeconds: state.remainingSeconds,
-      nextExercise: state.nextExerciseName,
-      isRunning: true,
-    );
+    _syncService(running: true);
     _startTimer();
   }
 
@@ -138,18 +153,17 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       WorkoutAlertService.notifyRestCompleted();
       WorkoutForegroundService.showRestCompleted(
         nextExercise: state.nextExerciseName,
+        setNumber: state.nextSetNumber,
+        totalSets: state.totalSetsForExercise,
+        targetReps: state.nextTargetReps,
+        targetWeight: state.nextTargetWeight,
       );
       _timer?.cancel();
       _timer = null;
       state = const RestTimerState();
     } else {
-      final next = state.remainingSeconds - 1;
-      WorkoutForegroundService.updateRest(
-        remainingSeconds: next,
-        nextExercise: state.nextExerciseName,
-        isRunning: true,
-      );
-      state = state.copyWith(remainingSeconds: next);
+      state = state.copyWith(remainingSeconds: state.remainingSeconds - 1);
+      _syncService(running: true);
     }
   }
 
