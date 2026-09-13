@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/workout_alert_service.dart';
+import '../../../../core/services/workout_foreground_service.dart';
 
 class RestTimerState {
   final int remainingSeconds;
@@ -37,11 +38,13 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       totalSeconds: seconds,
       isRunning: true,
     );
+    WorkoutForegroundService.updateRest(remainingSeconds: seconds);
     _startTimer();
   }
 
   void setTime(int seconds) {
     final running = state.isRunning;
+    WorkoutForegroundService.updateRest(remainingSeconds: seconds);
     state = state.copyWith(
       remainingSeconds: seconds,
       totalSeconds: seconds,
@@ -59,8 +62,10 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     if (state.remainingSeconds == 0) {
       start(seconds);
     } else {
+      final updated = state.remainingSeconds + seconds;
+      WorkoutForegroundService.updateRest(remainingSeconds: updated);
       state = state.copyWith(
-        remainingSeconds: state.remainingSeconds + seconds,
+        remainingSeconds: updated,
         totalSeconds: state.totalSeconds + seconds,
       );
     }
@@ -70,9 +75,9 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     if (state.remainingSeconds <= 15) {
       stop();
     } else {
-      state = state.copyWith(
-        remainingSeconds: state.remainingSeconds - 15,
-      );
+      final updated = state.remainingSeconds - 15;
+      WorkoutForegroundService.updateRest(remainingSeconds: updated);
+      state = state.copyWith(remainingSeconds: updated);
     }
   }
 
@@ -88,6 +93,8 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     _startTimer();
   }
 
+  void togglePause() => state.isRunning ? pause() : resume();
+
   void stop() {
     _timer?.cancel();
     _timer = null;
@@ -102,9 +109,12 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
   void _tick() {
     if (state.remainingSeconds <= 1) {
       WorkoutAlertService.notifyRestCompleted();
+      WorkoutForegroundService.updateRest(remainingSeconds: 0);
       stop();
     } else {
-      state = state.copyWith(remainingSeconds: state.remainingSeconds - 1);
+      final next = state.remainingSeconds - 1;
+      WorkoutForegroundService.updateRest(remainingSeconds: next);
+      state = state.copyWith(remainingSeconds: next);
     }
   }
 
