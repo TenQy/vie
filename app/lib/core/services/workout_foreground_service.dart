@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../utils/date_helpers.dart';
 
@@ -32,15 +33,17 @@ abstract final class WorkoutForegroundService {
   static bool _isInitialized = false;
 
   static void init() {
+    FlutterForegroundTask.initCommunicationPort();
     if (_isInitialized) return;
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'vie_workout_channel',
+        channelId: 'vie_workout_channel_v2',
         channelName: 'Entrenamiento Vie',
         channelDescription:
             'Seguimiento en tiempo real de tu sesión de entrenamiento y descansos',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
+        onlyAlertOnce: true,
       ),
       iosNotificationOptions: const IOSNotificationOptions(
         showNotification: true,
@@ -66,21 +69,40 @@ abstract final class WorkoutForegroundService {
     } catch (_) {}
   }
 
+  static List<NotificationButton> _restButtons({bool isRunning = true}) => [
+        const NotificationButton(
+          id: 'add_30s',
+          text: '+30s',
+          textColor: Color(0xFF6C5CE7),
+        ),
+        NotificationButton(
+          id: 'toggle_pause',
+          text: isRunning ? '⏸️ Pausa' : '▶️ Reanudar',
+          textColor:
+              isRunning ? const Color(0xFFFFA502) : const Color(0xFF2ED573),
+        ),
+        const NotificationButton(
+          id: 'skip_rest',
+          text: '⏭️ Saltar',
+          textColor: Color(0xFFFF4757),
+        ),
+      ];
+
+  static const _icon = NotificationIcon(
+    metaDataName: 'com.pravera.flutter_foreground_task.notificationIcon',
+    backgroundColor: Color(0xFF6C5CE7),
+  );
+
   static Future<void> startWorkout({required String routineName}) async {
     try {
       init();
-      final isRunning = await FlutterForegroundTask.isRunningService;
-      if (isRunning) return;
-
+      if (await FlutterForegroundTask.isRunningService) return;
       await FlutterForegroundTask.startService(
         serviceId: 101,
-        notificationTitle: routineName,
-        notificationText: 'Entrenamiento en curso',
-        notificationButtons: const [
-          NotificationButton(id: 'add_30s', text: '+30s'),
-          NotificationButton(id: 'toggle_pause', text: 'Pausa'),
-          NotificationButton(id: 'skip_rest', text: 'Saltar'),
-        ],
+        notificationTitle: '🏋️ $routineName',
+        notificationText: 'Sesión iniciada • ¡A darlo todo!',
+        notificationIcon: _icon,
+        notificationButtons: _restButtons(isRunning: true),
         callback: startForegroundCallback,
       );
     } catch (_) {}
@@ -89,37 +111,54 @@ abstract final class WorkoutForegroundService {
   static Future<void> updateRest({
     required int remainingSeconds,
     String? nextExercise,
+    bool isRunning = true,
   }) async {
     try {
+      init();
       final formatted = DateHelpers.formatDuration(remainingSeconds);
+      final title = isRunning
+          ? '⏱️ $formatted • Descanso activo'
+          : '⏸️ $formatted (Pausado) • Descanso';
       final subtitle = nextExercise != null
-          ? 'Siguiente: $nextExercise'
-          : 'Recuperando energía...';
+          ? '🏋️ Siguiente: $nextExercise'
+          : '💪 Recuperando energía...';
 
-      await FlutterForegroundTask.updateService(
-        notificationTitle: 'En descanso: $formatted',
-        notificationText: subtitle,
-      );
+      if (!await FlutterForegroundTask.isRunningService) {
+        await FlutterForegroundTask.startService(
+          serviceId: 101,
+          notificationTitle: title,
+          notificationText: subtitle,
+          notificationIcon: _icon,
+          notificationButtons: _restButtons(isRunning: isRunning),
+          callback: startForegroundCallback,
+        );
+      } else {
+        await FlutterForegroundTask.updateService(
+          notificationTitle: title,
+          notificationText: subtitle,
+          notificationButtons: _restButtons(isRunning: isRunning),
+        );
+      }
     } catch (_) {}
   }
 
-  static Future<void> updateExercise({
-    required String exerciseName,
-    required int setNumber,
-    required int totalSets,
-  }) async {
+  static Future<void> showRestCompleted({String? nextExercise}) async {
     try {
+      if (!await FlutterForegroundTask.isRunningService) return;
+      final subtitle = nextExercise != null
+          ? '💪 ¡Hora de $nextExercise!'
+          : '💪 ¡Listo para la siguiente serie!';
       await FlutterForegroundTask.updateService(
-        notificationTitle: exerciseName,
-        notificationText: 'Serie $setNumber de $totalSets en curso',
+        notificationTitle: '🔔 ¡Descanso completado!',
+        notificationText: subtitle,
+        notificationButtons: const [],
       );
     } catch (_) {}
   }
 
   static Future<void> stop() async {
     try {
-      final isRunning = await FlutterForegroundTask.isRunningService;
-      if (isRunning) {
+      if (await FlutterForegroundTask.isRunningService) {
         await FlutterForegroundTask.stopService();
       }
     } catch (_) {}

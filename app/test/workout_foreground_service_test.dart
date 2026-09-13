@@ -18,11 +18,10 @@ void main() {
       await WorkoutForegroundService.updateRest(
         remainingSeconds: 60,
         nextExercise: 'Press Banca',
+        isRunning: true,
       );
-      await WorkoutForegroundService.updateExercise(
-        exerciseName: 'Sentadillas',
-        setNumber: 1,
-        totalSets: 3,
+      await WorkoutForegroundService.showRestCompleted(
+        nextExercise: 'Press Banca',
       );
       await WorkoutForegroundService.stop();
     });
@@ -34,10 +33,11 @@ void main() {
       expect(notifier.state.remainingSeconds, equals(0));
       expect(notifier.state.isRunning, isFalse);
 
-      notifier.start(90);
+      notifier.start(90, nextExerciseName: 'Sentadillas');
       expect(notifier.state.remainingSeconds, equals(90));
       expect(notifier.state.totalSeconds, equals(90));
       expect(notifier.state.isRunning, isTrue);
+      expect(notifier.state.nextExerciseName, equals('Sentadillas'));
 
       notifier.togglePause();
       expect(notifier.state.isRunning, isFalse);
