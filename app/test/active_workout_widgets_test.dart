@@ -99,6 +99,7 @@ void main() {
               isRunning: true,
               nextSet: null,
               onAdd30Seconds: () {},
+              onAdd60Seconds: () {},
               onSubtract15Seconds: () {},
               onTogglePause: () {},
               onSkipRest: () => skipRestCalled = true,
@@ -109,9 +110,9 @@ void main() {
 
       expect(find.text('01:15'), findsOneWidget);
       expect(find.text('DESCANSO'), findsOneWidget);
-      expect(find.text('Saltar Descanso'), findsOneWidget);
+      expect(find.text('¡Listo para la serie!'), findsOneWidget);
 
-      await tester.tap(find.text('Saltar Descanso'));
+      await tester.tap(find.text('¡Listo para la serie!'));
       await tester.pump();
 
       expect(skipRestCalled, isTrue);
@@ -130,6 +131,7 @@ void main() {
               isRunning: false,
               nextSet: null,
               onAdd30Seconds: () {},
+              onAdd60Seconds: () {},
               onSubtract15Seconds: () {},
               onTogglePause: () => toggleCalled = true,
               onSkipRest: () {},

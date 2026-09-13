@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../../core/utils/date_helpers.dart';
 import '../../domain/entities/set_record_entity.dart';
+import 'glowing_timer_ring.dart';
 
 class RestTimerRingView extends StatelessWidget {
   final int remainingSeconds;
@@ -10,6 +11,7 @@ class RestTimerRingView extends StatelessWidget {
   final bool isRunning;
   final SetRecordEntity? nextSet;
   final VoidCallback onAdd30Seconds;
+  final VoidCallback onAdd60Seconds;
   final VoidCallback onSubtract15Seconds;
   final VoidCallback onTogglePause;
   final VoidCallback onSkipRest;
@@ -21,6 +23,7 @@ class RestTimerRingView extends StatelessWidget {
     required this.isRunning,
     required this.nextSet,
     required this.onAdd30Seconds,
+    required this.onAdd60Seconds,
     required this.onSubtract15Seconds,
     required this.onTogglePause,
     required this.onSkipRest,
@@ -34,60 +37,19 @@ class RestTimerRingView extends StatelessWidget {
         child: Column(
           children: [
             const Spacer(),
-            _buildTimerRing(),
+            GlowingTimerRing(
+              remainingSeconds: remainingSeconds,
+              totalSeconds: totalSeconds,
+              isRunning: isRunning,
+            ),
             const SizedBox(height: 32),
             _buildQuickControls(),
             const SizedBox(height: 24),
-            _buildSkipRestButton(),
+            _buildActionButton(),
             const Spacer(),
-            if (nextSet != null) _buildNextSetPreview(nextSet!),
+            if (nextSet != null) _buildPreparationCard(nextSet!),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTimerRing() {
-    final double progress = totalSeconds > 0
-        ? (remainingSeconds / totalSeconds).clamp(0.0, 1.0)
-        : 0.0;
-
-    return SizedBox(
-      width: 220,
-      height: 220,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SizedBox(
-            width: 220,
-            height: 220,
-            child: CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 10,
-              backgroundColor: AppColors.surfaceElevated,
-              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
-              strokeCap: StrokeCap.round,
-            ),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                isRunning ? 'DESCANSO' : 'PAUSADO',
-                style: AppTypography.labelSmall.copyWith(
-                  color: isRunning ? AppColors.primary : AppColors.textMuted,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                DateHelpers.formatDuration(remainingSeconds),
-                style: AppTypography.metricValue.copyWith(fontSize: 44),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -96,52 +58,74 @@ class RestTimerRingView extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        OutlinedButton(
-          onPressed: onSubtract15Seconds,
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppColors.border),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          ),
-          child: const Text('-15s'),
-        ),
-        const SizedBox(width: 16),
-        IconButton.filled(
-          onPressed: onTogglePause,
-          icon: Icon(isRunning ? LucideIcons.pause : LucideIcons.play, size: 24),
-          style: IconButton.styleFrom(
-            backgroundColor: AppColors.surfaceElevated,
-            foregroundColor: AppColors.primary,
-            padding: const EdgeInsets.all(14),
-          ),
-        ),
-        const SizedBox(width: 16),
-        OutlinedButton(
-          onPressed: onAdd30Seconds,
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppColors.border),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          ),
-          child: const Text('+30s'),
-        ),
+        _buildPillButton('-15s', () {
+          HapticFeedback.lightImpact();
+          onSubtract15Seconds();
+        }),
+        const SizedBox(width: 12),
+        _buildPlayPauseButton(),
+        const SizedBox(width: 12),
+        _buildPillButton('+30s', () {
+          HapticFeedback.lightImpact();
+          onAdd30Seconds();
+        }),
+        const SizedBox(width: 8),
+        _buildPillButton('+1m', () {
+          HapticFeedback.lightImpact();
+          onAdd60Seconds();
+        }),
       ],
     );
   }
 
-  Widget _buildSkipRestButton() {
+  Widget _buildPillButton(String label, VoidCallback onTap) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: AppColors.border),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      child: Text(label, style: AppTypography.labelSmall),
+    );
+  }
+
+  Widget _buildPlayPauseButton() {
+    return IconButton.filled(
+      onPressed: () {
+        HapticFeedback.mediumImpact();
+        onTogglePause();
+      },
+      icon: Icon(isRunning ? LucideIcons.pause : LucideIcons.play, size: 24),
+      style: IconButton.styleFrom(
+        backgroundColor: AppColors.surfaceElevated,
+        foregroundColor: AppColors.primary,
+        padding: const EdgeInsets.all(16),
+        side: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildActionButton() {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: onSkipRest,
-        icon: const Icon(LucideIcons.skipForward, size: 20),
-        label: const Text('Saltar Descanso'),
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          onSkipRest();
+        },
+        icon: const Icon(LucideIcons.zap, size: 20),
+        label: const Text('¡Listo para la serie!'),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
         ),
       ),
     );
   }
 
-  Widget _buildNextSetPreview(SetRecordEntity next) {
+  Widget _buildPreparationCard(SetRecordEntity next) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -153,13 +137,25 @@ class RestTimerRingView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'A CONTINUACIÓN',
-            style: AppTypography.labelSmall.copyWith(
-              color: AppColors.textMuted,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'PREPÁRATE',
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              Text(
+                'Serie ${next.setNumber}',
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           Text(
@@ -168,7 +164,7 @@ class RestTimerRingView extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            'Serie ${next.setNumber} • ${next.targetReps} reps • ${next.targetWeight} kg',
+            'Cargar ${next.targetWeight} kg • ${next.targetReps} reps • ${next.muscleGroup}',
             style: AppTypography.bodyMedium,
           ),
         ],

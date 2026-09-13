@@ -7,6 +7,7 @@ import '../../domain/entities/set_record_entity.dart';
 import '../../domain/entities/workout_session_entity.dart';
 import '../controllers/active_workout_controller.dart';
 import '../controllers/rest_timer_controller.dart';
+import '../widgets/active_workout_bottom_bar.dart';
 import '../widgets/active_workout_progress_bar.dart';
 import '../widgets/current_exercise_card.dart';
 import '../widgets/rest_timer_ring_view.dart';
@@ -62,6 +63,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           nextSet: currentSet.isCompleted ? null : currentSet,
           onAdd30Seconds: () =>
               ref.read(restTimerProvider.notifier).add30Seconds(),
+          onAdd60Seconds: () =>
+              ref.read(restTimerProvider.notifier).add60Seconds(),
           onSubtract15Seconds: () =>
               ref.read(restTimerProvider.notifier).subtract15Seconds(),
           onTogglePause: () {
@@ -104,7 +107,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           WorkoutNextPreview(nextSet: nextSet),
         ],
       ),
-      bottomNavigationBar: _buildBottomBar(context, session.id),
+      bottomNavigationBar: ActiveWorkoutBottomBar(
+        onFinish: () => _confirmFinish(session.id),
+      ),
     );
   }
 
@@ -151,30 +156,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
-  Widget _buildBottomBar(BuildContext context, String sessionId) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: ElevatedButton.icon(
-          onPressed: () => WorkoutDialogs.confirmFinish(
-            context: context,
-            onConfirm: () {
-              ref
-                  .read(activeWorkoutControllerProvider.notifier)
-                  .finishWorkout(sessionId);
-              ref.read(restTimerProvider.notifier).stop();
-              Navigator.pop(context);
-            },
-          ),
-          icon: const Icon(LucideIcons.check),
-          label: const Text('Finalizar Entrenamiento'),
-        ),
-      ),
+  void _confirmFinish(String sessionId) {
+    WorkoutDialogs.confirmFinish(
+      context: context,
+      onConfirm: () {
+        ref
+            .read(activeWorkoutControllerProvider.notifier)
+            .finishWorkout(sessionId);
+        ref.read(restTimerProvider.notifier).stop();
+        Navigator.pop(context);
+      },
     );
   }
 

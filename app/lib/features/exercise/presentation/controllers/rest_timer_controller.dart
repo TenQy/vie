@@ -60,6 +60,17 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     }
   }
 
+  void add60Seconds() {
+    if (state.remainingSeconds == 0) {
+      start(60);
+    } else {
+      state = state.copyWith(
+        remainingSeconds: state.remainingSeconds + 60,
+        totalSeconds: state.totalSeconds + 60,
+      );
+    }
+  }
+
   void subtract15Seconds() {
     if (state.remainingSeconds <= 15) {
       stop();
