@@ -10,6 +10,7 @@ import '../controllers/rest_timer_controller.dart';
 import '../widgets/active_workout_progress_bar.dart';
 import '../widgets/current_exercise_card.dart';
 import '../widgets/rest_timer_ring_view.dart';
+import '../widgets/workout_dialogs.dart';
 import '../widgets/workout_next_preview.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {
@@ -50,7 +51,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final safeIndex = _currentSetIndex.clamp(0, session.sets.length - 1);
     final currentSet = session.sets[safeIndex];
 
-    if (restTimer.isRunning && restTimer.remainingSeconds > 0) {
+    if (restTimer.remainingSeconds > 0) {
       return Scaffold(
         appBar: _buildAppBar(context, session.routineName, session.id),
         body: RestTimerRingView(
@@ -117,7 +118,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         IconButton(
           icon: const Icon(LucideIcons.x, color: AppColors.error),
           tooltip: 'Cancelar sesión',
-          onPressed: () => _confirmCancel(context, sessionId),
+          onPressed: () => WorkoutDialogs.confirmCancel(
+            context: context,
+            onConfirm: () {
+              ref
+                  .read(activeWorkoutControllerProvider.notifier)
+                  .cancelWorkout(sessionId);
+              ref.read(restTimerProvider.notifier).stop();
+              Navigator.pop(context);
+            },
+          ),
         ),
       ],
     );
@@ -133,7 +143,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       child: SafeArea(
         top: false,
         child: ElevatedButton.icon(
-          onPressed: () => _confirmFinish(context, sessionId),
+          onPressed: () => WorkoutDialogs.confirmFinish(
+            context: context,
+            onConfirm: () {
+              ref
+                  .read(activeWorkoutControllerProvider.notifier)
+                  .finishWorkout(sessionId);
+              ref.read(restTimerProvider.notifier).stop();
+              Navigator.pop(context);
+            },
+          ),
           icon: const Icon(LucideIcons.check),
           label: const Text('Finalizar Entrenamiento'),
         ),
@@ -164,60 +183,5 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     if (_currentSetIndex < totalSets - 1) {
       setState(() => _currentSetIndex++);
     }
-  }
-
-  void _confirmFinish(BuildContext context, String sessionId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Finalizar Entrenamiento?'),
-        content: const Text('Se guardará el volumen y tiempos de tu sesión.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Continuar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(activeWorkoutControllerProvider.notifier)
-                  .finishWorkout(sessionId);
-              ref.read(restTimerProvider.notifier).stop();
-              Navigator.pop(context);
-            },
-            child: const Text('Finalizar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmCancel(BuildContext context, String sessionId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Cancelar Entrenamiento?'),
-        content: const Text('La sesión quedará registrada como cancelada.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Volver'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref
-                  .read(activeWorkoutControllerProvider.notifier)
-                  .cancelWorkout(sessionId);
-              ref.read(restTimerProvider.notifier).stop();
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Cancelar sesión'),
-          ),
-        ],
-      ),
-    );
   }
 }

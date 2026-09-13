@@ -115,5 +115,36 @@ void main() {
 
       expect(skipRestCalled, isTrue);
     });
+
+    testWidgets('displays PAUSADO and play icon when paused, triggers toggle',
+        (WidgetTester tester) async {
+      bool toggleCalled = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RestTimerRingView(
+              remainingSeconds: 45,
+              totalSeconds: 60,
+              isRunning: false,
+              nextSet: null,
+              onAdd30Seconds: () {},
+              onSubtract15Seconds: () {},
+              onTogglePause: () => toggleCalled = true,
+              onSkipRest: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('00:45'), findsOneWidget);
+      expect(find.text('PAUSADO'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.play), findsOneWidget);
+
+      await tester.tap(find.byIcon(LucideIcons.play));
+      await tester.pump();
+
+      expect(toggleCalled, isTrue);
+    });
   });
 }
