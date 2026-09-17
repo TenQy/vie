@@ -186,5 +186,75 @@ void main() {
       expect(confirmed, isTrue);
       expect(find.text('¿Cancelar Descanso?'), findsNothing);
     });
+
+    testWidgets('confirmExitWorkout triggers onMinimize and closes dialog',
+        (WidgetTester tester) async {
+      bool minimized = false;
+      bool cancelled = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => WorkoutDialogs.confirmExitWorkout(
+                  context: context,
+                  onMinimize: () => minimized = true,
+                  onCancelWorkout: () => cancelled = true,
+                ),
+                child: const Text('Open Exit'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Exit'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('¿Salir del Entrenamiento?'), findsOneWidget);
+      expect(find.text('Minimizar'), findsOneWidget);
+      expect(find.text('Cancelar sesión'), findsOneWidget);
+
+      await tester.tap(find.text('Minimizar'));
+      await tester.pumpAndSettle();
+
+      expect(minimized, isTrue);
+      expect(cancelled, isFalse);
+      expect(find.text('¿Salir del Entrenamiento?'), findsNothing);
+    });
+
+    testWidgets('confirmExitWorkout triggers onCancelWorkout and closes dialog',
+        (WidgetTester tester) async {
+      bool minimized = false;
+      bool cancelled = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => WorkoutDialogs.confirmExitWorkout(
+                  context: context,
+                  onMinimize: () => minimized = true,
+                  onCancelWorkout: () => cancelled = true,
+                ),
+                child: const Text('Open Exit'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Exit'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancelar sesión'));
+      await tester.pumpAndSettle();
+
+      expect(minimized, isFalse);
+      expect(cancelled, isTrue);
+      expect(find.text('¿Salir del Entrenamiento?'), findsNothing);
+    });
   });
 }

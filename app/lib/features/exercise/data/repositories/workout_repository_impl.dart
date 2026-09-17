@@ -160,6 +160,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     ])
       ..where(_db.workoutSessions.status.equals('active'))
       ..orderBy([
+        OrderingTerm.desc(_db.workoutSessions.startTime),
         OrderingTerm.asc(_db.setRecords.rowId),
       ]);
 
@@ -168,6 +169,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       final sessionRow = rows.first.readTable(_db.workoutSessions);
       final sets = <SetRecord>[];
       for (final row in rows) {
+        final currentSession = row.readTable(_db.workoutSessions);
+        if (currentSession.id != sessionRow.id) continue;
         final setRow = row.readTableOrNull(_db.setRecords);
         if (setRow != null) {
           sets.add(setRow);
@@ -181,6 +184,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   Future<WorkoutSessionEntity?> getActiveSession() async {
     final session = await (_db.select(_db.workoutSessions)
           ..where((tbl) => tbl.status.equals('active'))
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.startTime)])
           ..limit(1))
         .getSingleOrNull();
     if (session == null) return null;
@@ -197,6 +201,16 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   @override
   Future<void> startWorkoutSession(WorkoutSessionEntity session) async {
     await _db.transaction(() async {
+      await (_db.update(_db.workoutSessions)
+            ..where((tbl) => tbl.status.equals('active')))
+          .write(
+        WorkoutSessionsCompanion(
+          status: const Value('cancelled'),
+          updatedAt: Value(DateTime.now()),
+          syncStatus: const Value('pending'),
+        ),
+      );
+
       await _db.into(_db.workoutSessions).insert(
             WorkoutSessionsCompanion.insert(
               id: session.id,

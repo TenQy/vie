@@ -120,4 +120,93 @@ void main() {
     await sub.cancel();
     await db.close();
   });
+
+  test(
+      'startWorkoutSession automatically cancels previous active sessions and isolates sets',
+      () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final repo = WorkoutRepositoryImpl(db);
+    final now = DateTime.now();
+
+    final session1 = WorkoutSessionEntity(
+      id: 'session-old',
+      routineId: 'routine-1',
+      routineName: 'Rutina 1',
+      status: 'active',
+      startTime: now.subtract(const Duration(minutes: 30)),
+      sets: [
+        SetRecordEntity(
+          id: 'set-s1-1',
+          sessionId: 'session-old',
+          exerciseName: 'Sentadilla',
+          muscleGroup: 'Piernas',
+          setNumber: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+        SetRecordEntity(
+          id: 'set-s1-2',
+          sessionId: 'session-old',
+          exerciseName: 'Sentadilla',
+          muscleGroup: 'Piernas',
+          setNumber: 2,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await repo.startWorkoutSession(session1);
+
+    final active1 = await repo.getActiveSession();
+    expect(active1, isNotNull);
+    expect(active1!.id, 'session-old');
+    expect(active1.sets.length, 2);
+
+    // Now start a second session without finishing session 1
+    final session2 = WorkoutSessionEntity(
+      id: 'session-new',
+      routineId: 'routine-2',
+      routineName: 'Rutina 2',
+      status: 'active',
+      startTime: now,
+      sets: [
+        SetRecordEntity(
+          id: 'set-s2-1',
+          sessionId: 'session-new',
+          exerciseName: 'Press Militar',
+          muscleGroup: 'Hombros',
+          setNumber: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await repo.startWorkoutSession(session2);
+
+    // Active session should now be session2
+    final active2 = await repo.getActiveSession();
+    expect(active2, isNotNull);
+    expect(active2!.id, 'session-new');
+    expect(active2.sets.length, 1);
+    expect(active2.sets.first.exerciseName, 'Press Militar');
+
+    // And watchActiveSession must only emit session2 sets (not 3 sets!)
+    final emitted = await repo.watchActiveSession().first;
+    expect(emitted, isNotNull);
+    expect(emitted!.id, 'session-new');
+    expect(emitted.sets.length, 1);
+
+    // Check that session1 is marked as cancelled
+    final allSessions = await db.select(db.workoutSessions).get();
+    final oldDbSession = allSessions.firstWhere((s) => s.id == 'session-old');
+    expect(oldDbSession.status, 'cancelled');
+
+    await db.close();
+  });
 }

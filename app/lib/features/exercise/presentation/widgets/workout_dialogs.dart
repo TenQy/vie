@@ -83,4 +83,41 @@ abstract final class WorkoutDialogs {
       ),
     );
   }
+
+  static void confirmExitWorkout({
+    required BuildContext context,
+    required VoidCallback onMinimize,
+    required VoidCallback onCancelWorkout,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Salir del Entrenamiento?'),
+        content: const Text(
+          'Puedes minimizar la sesión para continuar en segundo plano o cancelarla definitivamente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Continuar'),
+          ),
+          OutlinedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onMinimize();
+            },
+            child: const Text('Minimizar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onCancelWorkout();
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Cancelar sesión'),
+          ),
+        ],
+      ),
+    );
+  }
 }

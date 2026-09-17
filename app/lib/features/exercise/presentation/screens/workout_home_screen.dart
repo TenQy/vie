@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_bottom_nav_bar.dart';
 import '../../../../core/widgets/app_header.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../domain/entities/routine_entity.dart';
+import '../../domain/entities/workout_session_entity.dart';
 import '../controllers/active_workout_controller.dart';
 import '../controllers/routine_list_controller.dart';
 import '../providers/workout_repository_provider.dart';
@@ -106,7 +107,12 @@ class WorkoutHomeScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       children: [
         activeBanner,
-        _buildScheduledRoutineSection(context, ref, scheduledRoutine),
+        _buildScheduledRoutineSection(
+          context,
+          ref,
+          scheduledRoutine,
+          activeSessionAsync.valueOrNull,
+        ),
       ],
     );
   }
@@ -115,6 +121,7 @@ class WorkoutHomeScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     RoutineEntity routine,
+    WorkoutSessionEntity? activeSession,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -123,7 +130,9 @@ class WorkoutHomeScreen extends ConsumerWidget {
         children: [
           RoutineOverviewCard(
             routine: routine,
-            onStartWorkout: () => _startWorkout(context, ref, routine),
+            isWorkoutActive: activeSession != null,
+            onStartWorkout: () =>
+                _handleRoutineAction(context, ref, routine, activeSession),
           ),
           const SizedBox(height: 24),
           Text(
@@ -137,11 +146,22 @@ class WorkoutHomeScreen extends ConsumerWidget {
     );
   }
 
-  void _startWorkout(
+  void _handleRoutineAction(
     BuildContext context,
     WidgetRef ref,
     RoutineEntity routine,
+    WorkoutSessionEntity? activeSession,
   ) async {
+    if (activeSession != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ActiveWorkoutScreen(session: activeSession),
+        ),
+      );
+      return;
+    }
+
     await ref
         .read(activeWorkoutControllerProvider.notifier)
         .startWorkoutFromRoutine(routine);

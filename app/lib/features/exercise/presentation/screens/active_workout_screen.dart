@@ -43,16 +43,17 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
-    WorkoutForegroundService.stop();
+    if (ref.read(restTimerProvider).remainingSeconds <= 0) {
+      WorkoutForegroundService.stop();
+    }
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      if (ref.read(restTimerProvider).remainingSeconds <= 0) {
-        WorkoutForegroundService.stop();
-      }
+    if (state == AppLifecycleState.resumed &&
+        ref.read(restTimerProvider).remainingSeconds <= 0) {
+      WorkoutForegroundService.stop();
     }
   }
 
@@ -80,14 +81,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
     final safeIndex = _currentSetIndex.clamp(0, session.sets.length - 1);
     final currentSet = session.sets[safeIndex];
 
+    Widget content;
     if (restTimer.remainingSeconds > 0) {
       final notifier = ref.read(restTimerProvider.notifier);
-      return Scaffold(
-        appBar: _appBar(
-          session.routineName,
-          'Cancelar descanso',
-          () => _handleCancelRest(session),
-        ),
+      content = Scaffold(
+        appBar: _appBar(session.routineName, 'Cancelar descanso', () => _handleCancelRest(session)),
         body: RestTimerRingView(
           remainingSeconds: restTimer.remainingSeconds,
           totalSeconds: restTimer.totalSeconds,
@@ -101,32 +99,29 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
           onSetTime: notifier.setTime,
         ),
       );
+    } else {
+      final nextSet = (safeIndex + 1 < session.sets.length) ? session.sets[safeIndex + 1] : null;
+      content = Scaffold(
+        appBar: _appBar(session.routineName, 'Cancelar sesión', () => _confirmCancel(session.id)),
+        body: ActiveWorkoutExerciseView(
+          session: session,
+          currentSet: currentSet,
+          nextSet: nextSet,
+          onCompleteSet: (reps, weight) {
+            final totalNext = nextSet == null
+                ? null
+                : session.sets.where((s) => s.exerciseName == nextSet.exerciseName).length;
+            _handleCompleteSet(currentSet, reps, weight, session.sets.length, nextSet, totalNext);
+          },
+          onSkipSet: () => _handleSkipSet(session.sets.length),
+        ),
+        bottomNavigationBar: ActiveWorkoutBottomBar(
+          onFinish: () => _confirmFinish(session.id),
+        ),
+      );
     }
 
-    final nextSet = (safeIndex + 1 < session.sets.length)
-        ? session.sets[safeIndex + 1]
-        : null;
-
-    return Scaffold(
-      appBar: _appBar(
-        session.routineName,
-        'Cancelar sesión',
-        () => _confirmCancel(session.id),
-      ),
-      body: ActiveWorkoutExerciseView(
-        session: session,
-        currentSet: currentSet,
-        nextSet: nextSet,
-        onCompleteSet: (reps, weight) {
-          final totalNext = nextSet == null ? null : session.sets.where((s) => s.exerciseName == nextSet.exerciseName).length;
-          _handleCompleteSet(currentSet, reps, weight, session.sets.length, nextSet, totalNext);
-        },
-        onSkipSet: () => _handleSkipSet(session.sets.length),
-      ),
-      bottomNavigationBar: ActiveWorkoutBottomBar(
-        onFinish: () => _confirmFinish(session.id),
-      ),
-    );
+    return content;
   }
 
   PreferredSizeWidget _appBar(String t, String tip, VoidCallback fn) =>
@@ -143,20 +138,18 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
 
   void _confirmCancel(String id) => WorkoutDialogs.confirmCancel(
         context: context,
-        onConfirm: () => _endWorkout(ref.read(activeWorkoutControllerProvider.notifier).cancelWorkout, id),
+        onConfirm: () => _endWorkout(
+            ref.read(activeWorkoutControllerProvider.notifier).cancelWorkout, id),
       );
+
   void _confirmFinish(String id) => WorkoutDialogs.confirmFinish(
         context: context,
-        onConfirm: () => _endWorkout(ref.read(activeWorkoutControllerProvider.notifier).finishWorkout, id),
+        onConfirm: () => _endWorkout(
+            ref.read(activeWorkoutControllerProvider.notifier).finishWorkout, id),
       );
 
   void _handleCompleteSet(
-    SetRecordEntity set,
-    int reps,
-    double weight,
-    int total,
-    SetRecordEntity? next,
-    int? nextTotal,
+    SetRecordEntity set, int reps, double weight, int total, SetRecordEntity? next, int? nextTotal,
   ) {
     _lastCompletedSetId = set.id;
     ref.read(activeWorkoutControllerProvider.notifier).completeSet(set, reps: reps, weight: weight);
@@ -181,9 +174,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
           if (id == null) return;
           final idx = session.sets.indexWhere((s) => s.id == id);
           if (idx == -1) return;
-          ref
-              .read(activeWorkoutControllerProvider.notifier)
-              .revertSetCompletion(session.sets[idx]);
+          ref.read(activeWorkoutControllerProvider.notifier).revertSetCompletion(session.sets[idx]);
           setState(() {
             _currentSetIndex = idx;
             _lastCompletedSetId = null;

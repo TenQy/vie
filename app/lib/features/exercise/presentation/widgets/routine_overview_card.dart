@@ -6,11 +6,13 @@ import '../../domain/entities/routine_entity.dart';
 class RoutineOverviewCard extends StatelessWidget {
   final RoutineEntity routine;
   final VoidCallback onStartWorkout;
+  final bool isWorkoutActive;
 
   const RoutineOverviewCard({
     super.key,
     required this.routine,
     required this.onStartWorkout,
+    this.isWorkoutActive = false,
   });
 
   @override
@@ -51,8 +53,15 @@ class RoutineOverviewCard extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: onStartWorkout,
-              icon: const Icon(LucideIcons.play, size: 18),
-              label: const Text('Iniciar Entrenamiento'),
+              icon: Icon(
+                isWorkoutActive ? LucideIcons.rotateCcw : LucideIcons.play,
+                size: 18,
+              ),
+              label: Text(
+                isWorkoutActive
+                    ? 'Reanudar Entrenamiento'
+                    : 'Iniciar Entrenamiento',
+              ),
             ),
           ],
         ),
