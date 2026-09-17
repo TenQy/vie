@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/features/exercise/presentation/controllers/rest_timer_controller.dart';
-import 'package:app/features/exercise/presentation/widgets/rest_time_picker_sheet.dart';
+import 'package:app/features/exercise/presentation/widgets/widgets.dart';
 
 void main() {
   group('RestTimePickerSheet', () {

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/theme/theme.dart';
-import '../../../../core/utils/date_helpers.dart';
+import '../../../../../core/theme/theme.dart';
+import '../../../../../core/utils/date_helpers.dart';
 
 class GlowingTimerRing extends StatefulWidget {
   final int remainingSeconds;

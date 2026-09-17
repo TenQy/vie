@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:app/features/exercise/domain/entities/set_record_entity.dart';
-import 'package:app/features/exercise/presentation/widgets/active_workout_progress_bar.dart';
-import 'package:app/features/exercise/presentation/widgets/current_exercise_card.dart';
-import 'package:app/features/exercise/presentation/widgets/rest_timer_ring_view.dart';
-import 'package:app/features/exercise/presentation/widgets/workout_dialogs.dart';
+import 'package:app/features/exercise/presentation/widgets/widgets.dart';
 
 void main() {
   group('ActiveWorkoutProgressBar', () {

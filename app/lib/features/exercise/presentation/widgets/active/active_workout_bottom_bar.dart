@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../../../core/theme/theme.dart';
+import '../../../../../core/theme/theme.dart';
 
 class ActiveWorkoutBottomBar extends StatelessWidget {
   final VoidCallback onFinish;

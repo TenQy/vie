@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/theme.dart';
-import '../../domain/entities/exercise_entity.dart';
+import '../../../../../core/theme/theme.dart';
+import '../../../domain/entities/exercise_entity.dart';
 
 class ExerciseCard extends StatelessWidget {
   final ExerciseEntity exercise;

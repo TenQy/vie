@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
-import '../../../../core/theme/theme.dart';
-import '../../../../core/widgets/number_counter.dart';
-import '../../domain/entities/exercise_entity.dart';
+import '../../../../../core/theme/theme.dart';
+import '../../../../../core/widgets/number_counter.dart';
+import '../../../domain/entities/exercise_entity.dart';
 
 class AddExerciseSheet extends StatefulWidget {
   final ExerciseEntity? initialExercise;

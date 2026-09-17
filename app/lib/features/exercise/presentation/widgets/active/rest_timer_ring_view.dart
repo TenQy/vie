@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../../../core/theme/theme.dart';
-import '../../domain/entities/set_record_entity.dart';
+import '../../../../../core/theme/theme.dart';
+import '../../../domain/entities/set_record_entity.dart';
 import 'glowing_timer_ring.dart';
-import 'rest_time_picker_sheet.dart';
+import '../shared/rest_time_picker_sheet.dart';
 
 class RestTimerRingView extends StatelessWidget {
   final int remainingSeconds;

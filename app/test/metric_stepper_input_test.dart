@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:app/features/exercise/presentation/widgets/metric_stepper_input.dart';
+import 'package:app/core/widgets/metric_stepper_input.dart';
 
 void main() {
   group('MetricStepperInput', () {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../../../core/theme/theme.dart';
-import '../../domain/entities/set_record_entity.dart';
+import '../../../../../core/theme/theme.dart';
+import '../../../domain/entities/set_record_entity.dart';
 
 class WorkoutNextPreview extends StatelessWidget {
   final SetRecordEntity? nextSet;

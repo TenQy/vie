@@ -9,10 +9,8 @@ import '../../domain/entities/set_record_entity.dart';
 import '../../domain/entities/workout_session_entity.dart';
 import '../controllers/active_workout_controller.dart';
 import '../controllers/rest_timer_controller.dart';
-import '../widgets/active_workout_bottom_bar.dart';
-import '../widgets/active_workout_exercise_view.dart';
-import '../widgets/rest_timer_ring_view.dart';
-import '../widgets/workout_dialogs.dart';
+import '../widgets/active/active.dart';
+import '../widgets/shared/shared.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {
   final WorkoutSessionEntity session;

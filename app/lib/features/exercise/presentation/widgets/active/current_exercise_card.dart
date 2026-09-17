@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../../../core/theme/theme.dart';
-import '../../domain/entities/set_record_entity.dart';
-import 'metric_stepper_input.dart';
+import '../../../../../core/theme/theme.dart';
+import '../../../../../core/widgets/metric_stepper_input.dart';
+import '../../../domain/entities/set_record_entity.dart';
 
 class CurrentExerciseCard extends StatefulWidget {
   final SetRecordEntity currentSet;

@@ -6,7 +6,7 @@ import '../../../../core/widgets/app_header.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../controllers/routine_list_controller.dart';
-import '../widgets/routine_management_card.dart';
+import '../widgets/settings/settings.dart';
 import 'routine_editor_screen.dart';
 
 class WorkoutSettingsScreen extends ConsumerWidget {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../../../core/theme/theme.dart';
-import '../../../../core/utils/date_helpers.dart';
-import '../../domain/entities/routine_entity.dart';
+import '../../../../../core/theme/theme.dart';
+import '../../../../../core/utils/date_helpers.dart';
+import '../../../domain/entities/routine_entity.dart';
 
 class RoutineManagementCard extends StatelessWidget {
   final RoutineEntity routine;

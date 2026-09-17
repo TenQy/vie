@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/set_record_entity.dart';
-import '../../domain/entities/workout_session_entity.dart';
+import '../../../domain/entities/set_record_entity.dart';
+import '../../../domain/entities/workout_session_entity.dart';
 import 'active_workout_progress_bar.dart';
 import 'current_exercise_card.dart';
 import 'workout_next_preview.dart';

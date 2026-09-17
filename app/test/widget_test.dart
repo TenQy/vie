@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/features/exercise/domain/entities/exercise_entity.dart';
-import 'package:app/features/exercise/presentation/widgets/exercise_card.dart';
+import 'package:app/features/exercise/presentation/widgets/widgets.dart';
 
 void main() {
   testWidgets('ExerciseCard displays name, sets and muscle group',

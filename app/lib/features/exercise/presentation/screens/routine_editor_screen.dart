@@ -7,10 +7,8 @@ import '../../../../core/widgets/app_header.dart';
 import '../../domain/entities/exercise_entity.dart';
 import '../../domain/entities/routine_entity.dart';
 import '../controllers/routine_list_controller.dart';
-import '../widgets/add_exercise_sheet.dart';
-import '../widgets/exercise_card.dart';
-import '../widgets/exercise_list_empty_card.dart';
-import '../widgets/routine_details_form.dart';
+import '../widgets/home/exercise_card.dart';
+import '../widgets/routine_editor/routine_editor.dart';
 
 class RoutineEditorScreen extends ConsumerStatefulWidget {
   final RoutineEntity? initialRoutine;
