@@ -7,6 +7,8 @@ class NumberCounter extends StatelessWidget {
   final int value;
   final VoidCallback onDecrement;
   final VoidCallback onIncrement;
+  final int? minValue;
+  final int? maxValue;
 
   const NumberCounter({
     super.key,
@@ -14,10 +16,15 @@ class NumberCounter extends StatelessWidget {
     required this.value,
     required this.onDecrement,
     required this.onIncrement,
+    this.minValue,
+    this.maxValue,
   });
 
   @override
   Widget build(BuildContext context) {
+    final canDecrement = minValue == null || value > minValue!;
+    final canIncrement = maxValue == null || value < maxValue!;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -34,13 +41,13 @@ class NumberCounter extends StatelessWidget {
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(LucideIcons.minus, size: 16),
-                onPressed: onDecrement,
+                onPressed: canDecrement ? onDecrement : null,
               ),
               Text('$value', style: AppTypography.titleMedium),
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(LucideIcons.plus, size: 16),
-                onPressed: onIncrement,
+                onPressed: canIncrement ? onIncrement : null,
               ),
             ],
           ),

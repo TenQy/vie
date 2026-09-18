@@ -37,13 +37,13 @@
 ## 2. Fases de Implementación y Prioridades
 
 ### Fase 1: Estabilidad Core & Integridad de Datos (Prioridad Crítica)
-- [ ] **1.1 Resolver Bug de Sesiones Apiladas:**
+- [x] **1.1 Resolver Bug de Sesiones Apiladas:**
   - Agregar `PopScope` en `ActiveWorkoutScreen` para gestionar la salida del usuario (Minimizar vs Cancelar).
   * En `WorkoutRepositoryImpl`, asegurar que sólo exista **una** sesión activa en la base de datos (cancelar/cerrar automáticamente sesiones activas previas o huérfanas al iniciar una nueva).
   * Corregir la consulta reactiva `watchActiveSession()` para filtrar estrictamente los sets pertenecientes a la sesión activa más reciente.
   * Actualizar `WorkoutHomeScreen` y `RoutineOverviewCard`: si hay una sesión activa, el botón principal debe cambiar dinámicamente a *"Reanudar Entrenamiento"* con redirección a la sesión en curso.
   * Ajustar el ciclo de vida de `WorkoutForegroundService` para que no se apague accidentalmente al minimizar la pantalla si la sesión sigue en curso.
-- [ ] **1.2 Límites y Validación de Entradas Numéricas:**
+- [x] **1.2 Límites y Validación de Entradas Numéricas:**
   * Añadir `maxValue`, `minValue` y `maxLength` a `MetricStepperInput` (máx. 999.0 kg en peso, máx. 99 en reps).
   * Validar entradas en `AddExerciseSheet`.
 - [ ] **1.3 Flujo de la Última Serie:**

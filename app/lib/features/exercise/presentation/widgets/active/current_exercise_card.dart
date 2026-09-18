@@ -126,6 +126,8 @@ class _CurrentExerciseCardState extends State<CurrentExerciseCard> {
             label: 'REPS',
             value: _reps,
             minValue: 1,
+            maxValue: 999,
+            maxIntegerDigits: 3,
             step: 1,
             onChanged: (val) => setState(() => _reps = val.toInt()),
           ),
@@ -137,6 +139,9 @@ class _CurrentExerciseCardState extends State<CurrentExerciseCard> {
             value: _weight,
             isDecimal: true,
             minValue: 0,
+            maxValue: 999.0,
+            maxIntegerDigits: 3,
+            maxDecimalDigits: 2,
             step: 2.5,
             onChanged: (val) => setState(() => _weight = val.toDouble()),
           ),
@@ -149,7 +154,10 @@ class _CurrentExerciseCardState extends State<CurrentExerciseCard> {
     final isCompleted = widget.currentSet.isCompleted;
 
     return ElevatedButton.icon(
-      onPressed: () => widget.onCompleteSet(_reps, _weight),
+      onPressed: () {
+        FocusScope.of(context).unfocus();
+        widget.onCompleteSet(_reps.clamp(1, 999), _weight.clamp(0.0, 999.0));
+      },
       icon: Icon(
         isCompleted ? LucideIcons.checkCheck : LucideIcons.check,
         size: 20,

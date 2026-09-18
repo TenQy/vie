@@ -9,6 +9,9 @@ class MetricStepperInput extends StatefulWidget {
   final bool isDecimal;
   final double step;
   final num minValue;
+  final num maxValue;
+  final int maxIntegerDigits;
+  final int maxDecimalDigits;
   final ValueChanged<num> onChanged;
 
   const MetricStepperInput({
@@ -19,6 +22,9 @@ class MetricStepperInput extends StatefulWidget {
     this.isDecimal = false,
     this.step = 1.0,
     this.minValue = 0,
+    this.maxValue = 999.0,
+    this.maxIntegerDigits = 3,
+    this.maxDecimalDigits = 2,
   });
 
   @override
@@ -28,6 +34,21 @@ class MetricStepperInput extends StatefulWidget {
 class _MetricStepperInputState extends State<MetricStepperInput> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+
+  TextInputFormatter _buildFormatter() {
+    if (widget.isDecimal) {
+      final regExp = RegExp(
+        '^\\d{0,${widget.maxIntegerDigits}}([.,]\\d{0,${widget.maxDecimalDigits}})?\$',
+      );
+      return TextInputFormatter.withFunction(
+        (oldVal, newVal) => regExp.hasMatch(newVal.text) ? newVal : oldVal,
+      );
+    }
+    final regExp = RegExp('^\\d{0,${widget.maxIntegerDigits}}\$');
+    return TextInputFormatter.withFunction(
+      (oldVal, newVal) => regExp.hasMatch(newVal.text) ? newVal : oldVal,
+    );
+  }
 
   @override
   void initState() {
@@ -53,14 +74,24 @@ class _MetricStepperInputState extends State<MetricStepperInput> {
   }
 
   void _handleFocusChange() {
-    if (!_focusNode.hasFocus) {
+    if (_focusNode.hasFocus) {
+      Future.microtask(() {
+        if (_focusNode.hasFocus && mounted) {
+          _controller.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: _controller.text.length,
+          );
+        }
+      });
+    } else {
       final parsed = _parse(_controller.text);
       if (parsed == null) {
         _controller.text = _format(widget.value);
       } else {
-        final clamped = parsed < widget.minValue ? widget.minValue : parsed;
-        _controller.text = _format(clamped);
-        widget.onChanged(clamped);
+        final clamped = parsed.clamp(widget.minValue, widget.maxValue);
+        final finalVal = widget.isDecimal ? clamped : clamped.round();
+        _controller.text = _format(finalVal);
+        widget.onChanged(finalVal);
       }
     }
   }
@@ -81,7 +112,7 @@ class _MetricStepperInputState extends State<MetricStepperInput> {
 
   void _step(double delta) {
     final current = _parse(_controller.text) ?? widget.value;
-    final next = (current + delta).clamp(widget.minValue, 9999.0);
+    final next = (current + delta).clamp(widget.minValue, widget.maxValue);
     final finalVal = widget.isDecimal ? next : next.round();
     _controller.text = _format(finalVal);
     widget.onChanged(finalVal);
@@ -124,12 +155,7 @@ class _MetricStepperInputState extends State<MetricStepperInput> {
                   keyboardType: TextInputType.numberWithOptions(
                     decimal: widget.isDecimal,
                   ),
-                  inputFormatters: [
-                    if (widget.isDecimal)
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.,]?\d*'))
-                    else
-                      FilteringTextInputFormatter.digitsOnly,
-                  ],
+                  inputFormatters: [_buildFormatter()],
                   decoration: const InputDecoration(
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(vertical: 4),
@@ -137,7 +163,7 @@ class _MetricStepperInputState extends State<MetricStepperInput> {
                   ),
                   onChanged: (text) {
                     final parsed = _parse(text);
-                    if (parsed != null && parsed >= widget.minValue) {
+                    if (parsed != null) {
                       widget.onChanged(parsed);
                     }
                   },

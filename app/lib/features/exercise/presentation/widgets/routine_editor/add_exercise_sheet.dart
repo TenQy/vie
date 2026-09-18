@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../../core/theme/theme.dart';
@@ -83,61 +84,57 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
     );
   }
 
-  Widget _buildHeader(bool isEditing) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(isEditing ? 'Editar Ejercicio' : 'Agregar Ejercicio', style: AppTypography.titleLarge),
-        IconButton(icon: const Icon(LucideIcons.x, size: 20), onPressed: () => Navigator.pop(context)),
-      ],
-    );
-  }
+  Widget _buildHeader(bool isEditing) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(isEditing ? 'Editar Ejercicio' : 'Agregar Ejercicio', style: AppTypography.titleLarge),
+          IconButton(icon: const Icon(LucideIcons.x, size: 20), onPressed: () => Navigator.pop(context)),
+        ],
+      );
 
-  Widget _buildNameField() {
-    return TextField(
-      controller: _nameController,
-      autofocus: widget.initialExercise == null,
-      decoration: const InputDecoration(
-        labelText: 'Nombre del ejercicio',
-        hintText: 'Ej. Press de Banca Plano',
-      ),
-    );
-  }
-
-  Widget _buildMuscleDropdown() {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedMuscle,
-      decoration: const InputDecoration(labelText: 'Grupo muscular'),
-      items: _muscleGroups.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-      onChanged: (val) {
-        if (val != null) setState(() => _selectedMuscle = val);
-      },
-    );
-  }
-
-  Widget _buildSetsAndRepsRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: NumberCounter(
-            label: 'Series',
-            value: _targetSets,
-            onDecrement: () => setState(() => _targetSets = (_targetSets > 1) ? _targetSets - 1 : 1),
-            onIncrement: () => setState(() => _targetSets++),
-          ),
+  Widget _buildNameField() => TextField(
+        controller: _nameController,
+        autofocus: widget.initialExercise == null,
+        decoration: const InputDecoration(
+          labelText: 'Nombre del ejercicio',
+          hintText: 'Ej. Press de Banca Plano',
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: NumberCounter(
-            label: 'Reps',
-            value: _targetReps,
-            onDecrement: () => setState(() => _targetReps = (_targetReps > 1) ? _targetReps - 1 : 1),
-            onIncrement: () => setState(() => _targetReps++),
+      );
+
+  Widget _buildMuscleDropdown() => DropdownButtonFormField<String>(
+        initialValue: _selectedMuscle,
+        decoration: const InputDecoration(labelText: 'Grupo muscular'),
+        items: _muscleGroups.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+        onChanged: (val) {
+          if (val != null) setState(() => _selectedMuscle = val);
+        },
+      );
+
+  Widget _buildSetsAndRepsRow() => Row(
+        children: [
+          Expanded(
+            child: NumberCounter(
+              label: 'Series',
+              value: _targetSets,
+              minValue: 1,
+              maxValue: 20,
+              onDecrement: () => setState(() => _targetSets--),
+              onIncrement: () => setState(() => _targetSets++),
+            ),
           ),
-        ),
-      ],
-    );
-  }
+          const SizedBox(width: 12),
+          Expanded(
+            child: NumberCounter(
+              label: 'Reps',
+              value: _targetReps,
+              minValue: 1,
+              maxValue: 999,
+              onDecrement: () => setState(() => _targetReps--),
+              onIncrement: () => setState(() => _targetReps++),
+            ),
+          ),
+        ],
+      );
 
   Widget _buildWeightAndRestRow() {
     return Row(
@@ -146,6 +143,11 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
           child: TextField(
             controller: _weightController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              TextInputFormatter.withFunction(
+                (o, n) => RegExp(r'^\d{0,3}([.,]\d{0,2})?$').hasMatch(n.text) ? n : o,
+              ),
+            ],
             decoration: const InputDecoration(labelText: 'Peso (kg)', suffixText: 'kg'),
           ),
         ),
@@ -166,18 +168,16 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
     );
   }
 
-  Widget _buildSubmitButton(bool isEditing) {
-    return ElevatedButton(
-      onPressed: _handleSubmit,
-      child: Text(isEditing ? 'Guardar Cambios' : 'Agregar a la Rutina'),
-    );
-  }
+  Widget _buildSubmitButton(bool isEditing) => ElevatedButton(
+        onPressed: _handleSubmit,
+        child: Text(isEditing ? 'Guardar Cambios' : 'Agregar a la Rutina'),
+      );
 
   void _handleSubmit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
-    final weight = double.tryParse(_weightController.text.trim()) ?? 0.0;
+    final parsedWeight = double.tryParse(_weightController.text.trim().replaceAll(',', '.')) ?? 0.0;
     final now = DateTime.now();
 
     widget.onExerciseAdded(ExerciseEntity(
@@ -185,9 +185,9 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
       routineId: widget.initialExercise?.routineId ?? '',
       name: name,
       muscleGroup: _selectedMuscle,
-      targetSets: _targetSets,
-      targetReps: _targetReps,
-      targetWeight: weight,
+      targetSets: _targetSets.clamp(1, 20),
+      targetReps: _targetReps.clamp(1, 999),
+      targetWeight: parsedWeight.clamp(0.0, 999.0),
       restSeconds: _restSeconds,
       orderIndex: widget.initialExercise?.orderIndex ?? 0,
       createdAt: widget.initialExercise?.createdAt ?? now,
