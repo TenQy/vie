@@ -46,7 +46,7 @@
 - [x] **1.2 Límites y Validación de Entradas Numéricas:**
   * Añadir `maxValue`, `minValue` y `maxLength` a `MetricStepperInput` (máx. 999.0 kg en peso, máx. 99 en reps).
   * Validar entradas en `AddExerciseSheet`.
-- [ ] **1.3 Flujo de la Última Serie:**
+- [x] **1.3 Flujo de la Última Serie:**
   * Al completar la última serie de la sesión, no iniciar temporizador de descanso; desplegar diálogo de finalización directa.
 
 ### Fase 2: Pantalla de Resultados y Descansos Flexibles

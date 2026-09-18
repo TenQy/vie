@@ -106,12 +106,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
           currentSet: currentSet,
           nextSet: nextSet,
           onCompleteSet: (reps, weight) {
-            final totalNext = nextSet == null
+            final nextTotal = nextSet == null
                 ? null
                 : session.sets.where((s) => s.exerciseName == nextSet.exerciseName).length;
-            _handleCompleteSet(currentSet, reps, weight, session.sets.length, nextSet, totalNext);
+            _handleCompleteSet(currentSet, reps, weight, session.sets.length, nextSet, nextTotal, session.id);
           },
-          onSkipSet: () => _handleSkipSet(session.sets.length),
+          onSkipSet: () => _handleSkipSet(session.sets.length, session.id),
         ),
         bottomNavigationBar: ActiveWorkoutBottomBar(
           onFinish: () => _confirmFinish(session.id),
@@ -140,26 +140,30 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
             ref.read(activeWorkoutControllerProvider.notifier).cancelWorkout, id),
       );
 
-  void _confirmFinish(String id) => WorkoutDialogs.confirmFinish(
+  void _confirmFinish(String id, {bool isAllCompleted = false}) =>
+      WorkoutDialogs.confirmFinish(
         context: context,
+        isAllCompleted: isAllCompleted,
         onConfirm: () => _endWorkout(
             ref.read(activeWorkoutControllerProvider.notifier).finishWorkout, id),
       );
 
   void _handleCompleteSet(
-    SetRecordEntity set, int reps, double weight, int total, SetRecordEntity? next, int? nextTotal,
+    SetRecordEntity set, int reps, double weight, int total, SetRecordEntity? next, int? nextTotal, String sessionId,
   ) {
     _lastCompletedSetId = set.id;
     ref.read(activeWorkoutControllerProvider.notifier).completeSet(set, reps: reps, weight: weight);
+    if (next == null) return _confirmFinish(sessionId, isAllCompleted: true);
+
     if (_currentSetIndex < total - 1) setState(() => _currentSetIndex++);
     final rest = set.restTimeSeconds > 0 ? set.restTimeSeconds : 90;
     ref.read(restTimerProvider.notifier).start(
           rest,
-          nextExerciseName: next?.exerciseName,
-          nextSetNumber: next?.setNumber,
+          nextExerciseName: next.exerciseName,
+          nextSetNumber: next.setNumber,
           totalSetsForExercise: nextTotal,
-          nextTargetReps: next?.targetReps,
-          nextTargetWeight: next?.targetWeight,
+          nextTargetReps: next.targetReps,
+          nextTargetWeight: next.targetWeight,
         );
   }
 
@@ -180,7 +184,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen>
         },
       );
 
-  void _handleSkipSet(int totalSets) {
-    if (_currentSetIndex < totalSets - 1) setState(() => _currentSetIndex++);
+  void _handleSkipSet(int totalSets, String sessionId) {
+    if (_currentSetIndex < totalSets - 1) {
+      setState(() => _currentSetIndex++);
+    } else {
+      _confirmFinish(sessionId);
+    }
   }
 }

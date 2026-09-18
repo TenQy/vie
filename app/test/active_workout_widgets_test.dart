@@ -253,5 +253,40 @@ void main() {
       expect(cancelled, isTrue);
       expect(find.text('¿Salir del Entrenamiento?'), findsNothing);
     });
+
+    testWidgets('confirmFinish shows celebratory modal when isAllCompleted is true',
+        (WidgetTester tester) async {
+      bool finished = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => WorkoutDialogs.confirmFinish(
+                  context: context,
+                  isAllCompleted: true,
+                  onConfirm: () => finished = true,
+                ),
+                child: const Text('Finish All'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Finish All'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('¡Entrenamiento Completado!'), findsOneWidget);
+      expect(find.text('Revisar'), findsOneWidget);
+      expect(find.text('Finalizar'), findsOneWidget);
+
+      await tester.tap(find.text('Finalizar'));
+      await tester.pumpAndSettle();
+
+      expect(finished, isTrue);
+      expect(find.text('¡Entrenamiento Completado!'), findsNothing);
+    });
   });
 }

@@ -5,16 +5,21 @@ abstract final class WorkoutDialogs {
   static void confirmFinish({
     required BuildContext context,
     required VoidCallback onConfirm,
+    bool isAllCompleted = false,
   }) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Finalizar Entrenamiento?'),
-        content: const Text('Se guardará el volumen y tiempos de tu sesión.'),
+        title: Text(isAllCompleted ? '¡Entrenamiento Completado!' : '¿Finalizar Entrenamiento?'),
+        content: Text(
+          isAllCompleted
+              ? 'Has completado todas las series. ¿Listo para guardar y terminar?'
+              : 'Se guardará el volumen y tiempos de tu sesión.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Continuar'),
+            child: Text(isAllCompleted ? 'Revisar' : 'Continuar'),
           ),
           ElevatedButton(
             onPressed: () {
